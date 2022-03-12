@@ -1,0 +1,82 @@
+package application
+
+import analysis.NamedAnalysis
+import input.CliParser
+import input.CliParser.OptionMap
+import model.PairResult
+import org.slf4j.{Logger, LoggerFactory}
+import output.CsvFileOutput
+
+import scala.util.{Failure, Success}
+
+/**
+ * Base trait for applications that execute any kind of analysis on JAR files. Provides Lifecycle Hooks,
+ * export functionality and logging access.
+ */
+trait AnalysisApplication extends CsvFileOutput {
+
+  /**
+   * The logger for this instance
+   */
+  protected final val log: Logger = LoggerFactory.getLogger(this.getClass)
+  // todo set log level to debug
+
+  def buildAnalysis(): Seq[NamedAnalysis]
+
+  /**
+   * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
+   * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
+   *  (List[PairResult], ApplicationPerformanceStatistics) */
+  def calculateResults(): Unit
+
+  /**
+   * Prints results to the CLI and writes them to a CSV report if specified by the
+   * application configuration.
+   *
+   * @param results Results to process
+   */
+  def handleResults(results: List[PairResult]): Unit = {
+    // todo: add output file
+    /*if (appConfiguration.outFileOption.isDefined) {
+      log.info(s"Writing results to output file ${appConfiguration.outFileOption.get}")
+      writeResultsToFile(appConfiguration.outFileOption.get, results) match {
+        case Failure(ex) =>
+          log.error("Error writing results", ex)
+        case Success(_) =>
+          log.info(s"Done writing results to file")
+      }*/
+
+    results.foreach { res =>
+      log.info(s"Results for analysis '${res.analysisName}' on ${res.jarFileOne.getName}/${res.jarFileTwo.getName}:")
+      res.results.foreach { v =>
+        log.info(s"\t- ${v.metricName} on ${v.jarNameOne}→${v.jarNameTwo}: ${v.value}")
+      }
+    }
+
+  }
+
+  /**
+   * Executes a given operation and measures the corresponding execution time (wall clock). Returns a tuple of the operation's
+   * result and it's execution time.
+   *
+   * @param codeToExecute The function to measure
+   * @tparam T Function return type
+   * @return Tuple of execution time in MS and the function's result
+   */
+  protected def measureExecutionTime[T](implicit codeToExecute: () => T): (Long, T) = {
+    val startTime = System.nanoTime()
+    val result = codeToExecute.apply()
+    val durationMs: Long = (System.nanoTime() - startTime) / 1000000L
+    (durationMs, result)
+  }
+
+
+  /**
+   * The main entrypoint for every analysis application. Parses CLI input and controls the application lifecycle.
+   *
+   * @param arguments List of arguments
+   */
+  final def main(arguments: Array[String]): Unit = {
+    log.info("Uptown skate funk")
+  }
+}

@@ -19,16 +19,27 @@ class PostgresApplication extends AnalysisApplication {
 
   override def buildAnalysis(): Seq[NamedAnalysis] = {Seq(
     new ClassDeprecationAnalysis()
-  )}
+  )
+  }
 
 }
 
 
 object PostgresApplicationObject extends PostgresApplication {
+  val cda = buildAnalysis().head
+
   val postgresInteractor = new PostgresUtils()
   val urls: Seq[URL] = postgresInteractor.getURLsAllVersions("junit", "junit")
 
   val downloader = new DownloadLib()
-  downloader.downloadAndLoadOne(urls.head)
+
+  urls.foreach(url =>
+    downloader.downloadAndLoadOne(url) match{
+      case Some(project) => cda.produceAnalysisResultForJAR(project)
+      case None => log.error("heeeelp")
+    }
+
+  )
+
 
 }

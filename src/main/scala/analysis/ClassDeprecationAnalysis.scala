@@ -41,11 +41,8 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    *         String: entityIdent
    */
 
-  def produceAnalysisResultForJAR(project: Project[URL],
-                                           customOptions: OptionMap): Try[Double] = {
+  def produceAnalysisResultForJAR(project: Project[URL]): Try[Double] = {
     var evolution: Double = 0
-
-    test = customOptions.contains(sym_test)
 
     var setOfClasses: Set[String] = Set()
     project.allProjectClassFiles.foreach(cl => setOfClasses += cl.fqn)

@@ -1,6 +1,11 @@
 package analysis
 
+import input.CliParser.OptionMap
+import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
+
+import java.net.URL
+import scala.util.Try
 
 /**
  * Base trait for all analyses. Provides access to common functionality including logging and the analysis name.
@@ -22,8 +27,8 @@ trait NamedAnalysis {
    * is initialized, but before any JAR files are being processed. It can be used to initialize
    * custom data structures.
    */
-  def initialize(): Unit = {
-    log.debug("Analysis initialized")
-  }
+  def initialize(): Unit = { log.debug("Analysis initialized") }
+
+  def produceAnalysisResultForJAR(project: Project[URL]): Try[Double]
 
 }

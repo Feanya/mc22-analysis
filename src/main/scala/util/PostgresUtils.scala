@@ -20,6 +20,10 @@ class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "dat
 
   def version = column[String]("version")
 
+  def path = column[String]("path")
+
+  def classifier = column[Option[String]]("classifier")
+
   def versionscheme = column[Int]("versionscheme")
 
   def timestamp = column[Timestamp]("timestamp")
@@ -61,19 +65,25 @@ class PostgresUtils() {
       log.info("GAVs:")
       //val f = db.run(gavs.take(5).result)
       val a = db.run(gavs
-        .filter(row => row.artifactname === artifactname
-          && row.groupid === groupid)
+        .filter(row =>
+          // Correct GA
+          row.artifactname === artifactname && row.groupid === groupid
+          // only primary artifacts
+          && row.classifier.isEmpty
+          // only M.M and M.M.P since we don't care about prereleases
+          && (row.versionscheme === 1 || row.versionscheme === 2)
+        )
+        // todo better sorting
         .sortBy(_.timestamp)
-        .map(_.version)
+        .map(_.path)
         .result)
 
       val b = Await.result(a, Duration.Inf)
       println(s"$groupid.$artifactname versions in database sorted by timestamp")
       b.distinct.foreach(println(_))
 
-      b.distinct.map(v =>
-        new URL(s"https://repo1.maven.org/maven2/${groupid}/${artifactname}/${v}/${artifactname}-${v}.jar")
-      )
+      b.distinct.map(v => new URL(s"https://repo1.maven.org/maven2/$v"))
+
     }
     finally {
       db.close()

@@ -1,0 +1,6 @@
+*application.conf
+target/*
+.bsp/*
+.idea/*
+project/project*
+project/target*

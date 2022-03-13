@@ -13,7 +13,7 @@ import scala.util.matching.Regex
 /**
  * based on impl.group1.EvolutionAnalysis
  *
- * @param jarDir directory containing the different jar-file versions of a software to analyze
+ * @param jarDir directory containing the different jar-file vs of a software to analyze
  *               Optional CLI arguments:
  */
 class ClassDeprecationAnalysis() extends NamedAnalysis {
@@ -41,8 +41,9 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    *         String: entityIdent
    */
 
-  def produceAnalysisResultForJAR(project: Project[URL]): Try[Double] = {
+  def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double] = {
     var evolution: Double = 0
+    currentJar = jarname
 
     var setOfClasses: Set[String] = Set()
     project.allProjectClassFiles.foreach(cl => setOfClasses += cl.fqn)

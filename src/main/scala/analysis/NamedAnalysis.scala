@@ -29,6 +29,6 @@ trait NamedAnalysis {
    */
   def initialize(): Unit = { log.debug("Analysis initialized") }
 
-  def produceAnalysisResultForJAR(project: Project[URL]): Try[Double]
+  def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double]
 
 }

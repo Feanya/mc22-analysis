@@ -31,6 +31,16 @@ class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "dat
   def * = (id, groupid, artifactname, version, versionscheme)
 }
 
+
+
+class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") {
+  def vs = column[Int]("vs")
+
+  def ga = column[String]("ga")
+
+  def * = (vs, ga)
+}
+
 class PostgresUtils() {
   val log: Logger = LoggerFactory.getLogger("")
 
@@ -48,7 +58,7 @@ class PostgresUtils() {
     Database.forURL(url, user, password)
   }
 
-  /** Get GAV-jar-URLs from all versions of a GA
+  /** Get GAV-jar-URLs from all vs of a GA
    *
    * @param groupid      G
    * @param artifactname A
@@ -60,11 +70,11 @@ class PostgresUtils() {
     log.info(s"Getting URLs of $groupid:$artifactname from database…")
 
     try {
-      val gavs = TableQuery[Data]
+      val gas = TableQuery[Data]
 
-      log.info("GAVs:")
+      log.info("Distinct GAs:")
       //val f = db.run(gavs.take(5).result)
-      val a = db.run(gavs
+      val a = db.run(gas
         .filter(row =>
           // Correct GA
           row.artifactname === artifactname && row.groupid === groupid
@@ -79,11 +89,45 @@ class PostgresUtils() {
         .result)
 
       val b = Await.result(a, Duration.Inf)
-      println(s"$groupid.$artifactname versions in database sorted by timestamp")
+      println(s"$groupid.$artifactname vs in database sorted by timestamp")
       b.distinct.foreach(println(_))
 
       b.distinct.map(v => new URL(s"https://repo1.maven.org/maven2/$v"))
 
+    }
+    finally {
+      db.close()
+    }
+  }
+
+
+  /** Get a specific amount of GAs
+   *
+   * @param groupid      G
+   * @param artifactname A
+   * @return sequence of URLs
+   */
+  def getGAs(limit: Int): Seq[(String, String)] = {
+    val db = readConfigAndGetDatabaseConnection
+
+    log.info(s"Getting GA-combinations from database…")
+
+    try {
+      val gavs = TableQuery[AggregatedGA]
+
+      log.info("GAVs:")
+      //val f = db.run(gavs.take(5).result)
+      val a = db.run(gavs
+        .sortBy(_.vs)
+        .take(limit)
+        .map(_.ga)
+        .result)
+
+      val b = Await.result(a, Duration.Inf)
+      println(s"${b.length} gas in database")
+      b.foreach(println(_))
+
+      b.map(row => (row.split(':').head, row.split(':').last))
     }
     finally {
       db.close()

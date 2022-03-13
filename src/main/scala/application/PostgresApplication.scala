@@ -1,10 +1,7 @@
 package application
 
 import analysis.{ClassDeprecationAnalysis, NamedAnalysis}
-import util.DownloadLib
-import util.PostgresUtils
-
-import java.net.URL
+import util.{DownloadLib, PostgresUtils}
 
 class PostgresApplication extends AnalysisApplication {
 
@@ -16,30 +13,30 @@ class PostgresApplication extends AnalysisApplication {
 
   }
 
-
-  override def buildAnalysis(): Seq[NamedAnalysis] = {Seq(
-    new ClassDeprecationAnalysis()
-  )
+  override def buildAnalysis(): Seq[NamedAnalysis] = {
+    Seq(
+      new ClassDeprecationAnalysis()
+    )
   }
 
 }
 
-
 object PostgresApplicationObject extends PostgresApplication {
-  val cda = buildAnalysis().head
+  val classDeprecationAnalysis = buildAnalysis().head
 
   val postgresInteractor = new PostgresUtils()
-  val urls: Seq[URL] = postgresInteractor.getURLsAllVersions("junit", "junit")
+  val gas: Seq[(String, String)] = postgresInteractor.getGAs(5)
+  val urls_seq = gas.map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
 
   val downloader = new DownloadLib()
-
-  urls.foreach(url =>
-    downloader.downloadAndLoadOne(url) match{
-      case Some(project) => cda.produceAnalysisResultForJAR(project)
-      case None => log.error("heeeelp")
-    }
-
+  urls_seq.foreach(
+    lib =>
+      lib.foreach(url =>
+        downloader.downloadAndLoadOne(url) match {
+          case Some(project) =>
+            classDeprecationAnalysis.produceAnalysisResultForJAR(project, url.toString.split("/").takeRight(1).head)
+          case None => log.error(s"Could not download $url")
+        }
+      )
   )
-
-
 }

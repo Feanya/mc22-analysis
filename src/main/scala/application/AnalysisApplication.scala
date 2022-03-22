@@ -4,9 +4,11 @@ import analysis.NamedAnalysis
 import input.CliParser
 import input.CliParser.OptionMap
 import model.PairResult
+import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 import output.CsvFileOutput
 
+import java.net.URL
 import scala.util.{Failure, Success}
 
 /**

@@ -51,16 +51,11 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
   def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double] = {
     currentJar = jarname
 
-    var setOfClasses: Set[String] = Set()
-    project.allProjectClassFiles.foreach(cl => setOfClasses += cl.fqn)
-
-    val currentClasses: Set[String] = setOfClasses
-    val currentClassFiles: Set[ClassFile] = Set()
-    project.allProjectClassFiles.foreach(cl => setOfClasses += cl.fqn)
+    // Get the fully qualified names (fqn) of all classes in a set
+    val currentClasses: Set[String] = project.allProjectClassFiles.map(_.fqn).toSet
 
     // Find deprecation tags in classes for next round
-    val javaLangPattern: Regex = "java/lang/(.*)".r
-    val deprecationPattern: Regex = "Deprecated".r
+    val deprecationPattern: Regex = "java/lang/Deprecated".r
     var deprecatedClasses: Set[String] = Set()
     var deprecatedClassesPublic: Set[Boolean] = Set()
 

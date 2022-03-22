@@ -3,6 +3,8 @@ package application
 import analysis.{ClassDeprecationAnalysis, NamedAnalysis}
 import util.{DownloadLib, PostgresUtils}
 
+import java.net.URL
+
 class PostgresApplication extends AnalysisApplication {
 
   /**

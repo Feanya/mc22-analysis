@@ -33,7 +33,13 @@ trait AnalysisApplication extends CsvFileOutput {
    * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
    * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
    *  (List[PairResult], ApplicationPerformanceStatistics) */
-  def calculateResults(): Unit
+  def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], url: URL): Unit = {
+    analyses.foreach(analysis =>
+      analysis.produceAnalysisResultForJAR(
+        project,
+        // last part of the path is the jarname
+        url.toString.split("/").last))
+  }
 
   /**
    * Prints results to the CLI and writes them to a CSV report if specified by the

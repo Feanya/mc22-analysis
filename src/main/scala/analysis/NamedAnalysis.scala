@@ -27,8 +27,13 @@ trait NamedAnalysis {
    * is initialized, but before any JAR files are being processed. It can be used to initialize
    * custom data structures.
    */
-  def initialize(): Unit = { log.debug("Analysis initialized") }
+  def initialize(): Unit = { log.debug(s"Analysis ${analysisName} initialized") }
 
   def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double]
+
+  /**
+   * This method shall be called after each library (GA) to flush partial results
+   */
+  def reset(): Unit
 
 }

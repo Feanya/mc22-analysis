@@ -8,37 +8,34 @@ import java.net.URL
 class PostgresApplication extends AnalysisApplication {
 
   /**
-   * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
-   * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
-   */
-  def calculateResults(): Unit = {
-
-  }
-
-  override def buildAnalysis(): Seq[NamedAnalysis] = {
-    Seq(
-      new ClassDeprecationAnalysis()
-    )
+   * Returns the chosen analyses, initialized, as a sequence to be worked with.
+   *
+   * @return Sequence of analyses to be conducted */
+  def buildAnalysis(): Seq[NamedAnalysis] = {
+    val analyses = Seq(new ClassDeprecationAnalysis())
+    analyses.foreach(_.initialize())
+    analyses
   }
 
 }
 
 object PostgresApplicationObject extends PostgresApplication {
-  val classDeprecationAnalysis = buildAnalysis().head
+  val analyses: Seq[NamedAnalysis] = buildAnalysis()
 
   val postgresInteractor = new PostgresUtils()
-  val gas: Seq[(String, String)] = postgresInteractor.getGAs(5)
-  val urls_seq = gas.map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
+  val urls_seq: Seq[Seq[URL]] = {
+    // get library-coordinates from database
+    postgresInteractor.getGAs(5)
+    // get URLS for all versions from database
+    .map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
+  }
 
   val downloader = new DownloadLib()
-  urls_seq.foreach(
-    lib =>
-      lib.foreach(url =>
-        downloader.downloadAndLoadOne(url) match {
-          case Some(project) =>
-            classDeprecationAnalysis.produceAnalysisResultForJAR(project, url.toString.split("/").takeRight(1).head)
-          case None => log.error(s"Could not download $url")
-        }
-      )
-  )
+  urls_seq.foreach(lib =>
+    // download and analyse
+    lib.foreach(url => downloader.downloadAndLoadOne(url) match {
+      // run all analyses for one project per round
+      case Some(project) => calculateResults(analyses, project, url)
+      case None => log.error(s"Could not load $url")
+  }))
 }

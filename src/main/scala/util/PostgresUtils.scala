@@ -65,7 +65,7 @@ class PostgresUtils() {
    * @return sequence of URLs
    */
   def getURLsAllVersions(groupid: String, artifactname: String): Seq[URL] = {
-    val db = readConfigAndGetDatabaseConnection
+    val db = this.readConfigAndGetDatabaseConnection
 
     log.info(s"Getting URLs of $groupid:$artifactname from database…")
 
@@ -73,14 +73,13 @@ class PostgresUtils() {
       val gas = TableQuery[Data]
 
       log.info("Distinct GAs:")
-      //val f = db.run(gavs.take(5).result)
       val a = db.run(gas
         .filter(row =>
           // Correct GA
           row.artifactname === artifactname && row.groupid === groupid
           // only primary artifacts
           && row.classifier.isEmpty
-          // only M.M and M.M.P since we don't care about prereleases
+          // only M.M and M.M.P since we don't care about pre-releases
           && (row.versionscheme === 1 || row.versionscheme === 2)
         )
         // todo better sorting
@@ -124,10 +123,11 @@ class PostgresUtils() {
         .result)
 
       val b = Await.result(a, Duration.Inf)
-      println(s"${b.length} gas in database")
+      log.debug(s"Taken ${b.length} GAs from database")
       b.foreach(println(_))
 
-      b.map(row => (row.split(':').head, row.split(':').last))
+      b.map(row => // split into groupid and artifactname
+        (row.split(':').head, row.split(':').last))
     }
     finally {
       db.close()

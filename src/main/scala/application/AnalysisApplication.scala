@@ -21,6 +21,10 @@ trait AnalysisApplication extends CsvFileOutput {
   protected final val log: Logger = LoggerFactory.getLogger(this.getClass)
   // todo set log level to debug
 
+  /**
+   * to be implemented by the application: collect all analyses which shall be conducted
+   * @return sequence of analyses to call
+   */
   def buildAnalysis(): Seq[NamedAnalysis]
 
   /**
@@ -32,7 +36,6 @@ trait AnalysisApplication extends CsvFileOutput {
   /**
    * Prints results to the CLI and writes them to a CSV report if specified by the
    * application configuration.
-   *
    * @param results Results to process
    */
   def handleResults(results: List[PairResult]): Unit = {

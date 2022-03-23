@@ -5,15 +5,15 @@ import scala.collection.mutable
 //TODO: Timestamp / Configuration?
 class ApplicationPerformanceStatistics() {
 
+  private val perFilePerformanceStatistics: mutable.Map[String, FilePerformanceStatistics] = new mutable.HashMap()
   private var totalInitTimeMs: Long = 0
 
-  private val perFilePerformanceStatistics: mutable.Map[String, FilePerformanceStatistics] = new mutable.HashMap()
-
-  def putFileStatistics(statistics:FilePerformanceStatistics): Unit = {
+  def putFileStatistics(statistics: FilePerformanceStatistics): Unit = {
     perFilePerformanceStatistics.put(statistics.filePath, statistics)
   }
 
   def analysesInitializationTime: Long = totalInitTimeMs
+
   def fileStatisticsMap: Map[String, FilePerformanceStatistics] = perFilePerformanceStatistics.toMap
 
 }
@@ -35,11 +35,10 @@ object ApplicationPerformanceStatistics {
 
 class FilePerformanceStatistics(val filePath: String) {
 
+  private val perAnalysisExecutionTimesMs: mutable.Map[String, Long] = new mutable.HashMap()
   private var opalInitTimeMs: Long = 0
 
-  private val perAnalysisExecutionTimesMs: mutable.Map[String, Long] = new mutable.HashMap()
-
-  def putAnalysisExecutionTime(analysisName: String, executionTimeMs: Long): Unit =  {
+  def putAnalysisExecutionTime(analysisName: String, executionTimeMs: Long): Unit = {
     perAnalysisExecutionTimesMs.put(analysisName, executionTimeMs)
   }
 

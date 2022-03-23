@@ -6,16 +6,6 @@ import util.{DownloadLib, PostgresUtils}
 import java.net.URL
 
 class PostgresApplication extends AnalysisApplication {
-  /**
-   * Returns the chosen analyses, initialized, as a sequence to be worked with.
-   *
-   * @return Sequence of analyses to be conducted */
-  def buildAnalysis(): Seq[NamedAnalysis] = {
-    val analyses = Seq(new ClassDeprecationAnalysis())
-    analyses.foreach(_.initialize())
-    analyses
-  }
-
   override def main(arguments: Array[String]): Unit = {
     val analyses: Seq[NamedAnalysis] = buildAnalysis()
 
@@ -42,5 +32,15 @@ class PostgresApplication extends AnalysisApplication {
       this.resetAnalyses(analyses)
     }
     )
+  }
+
+  /**
+   * Returns the chosen analyses, initialized, as a sequence to be worked with.
+   *
+   * @return Sequence of analyses to be conducted */
+  def buildAnalysis(): Seq[NamedAnalysis] = {
+    val analyses = Seq(new ClassDeprecationAnalysis())
+    analyses.foreach(_.initialize())
+    analyses
   }
 }

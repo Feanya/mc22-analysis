@@ -1,15 +1,12 @@
 package application
 
 import analysis.NamedAnalysis
-import input.CliParser
-import input.CliParser.OptionMap
 import model.PairResult
 import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 import output.CsvFileOutput
 
 import java.net.URL
-import scala.util.{Failure, Success}
 
 /**
  * Base trait for applications that execute any kind of analysis on JAR files. Provides Lifecycle Hooks,
@@ -25,36 +22,36 @@ trait AnalysisApplication extends CsvFileOutput {
 
   /**
    * to be implemented by the application: collect all analyses which shall be conducted
+   *
    * @return sequence of analyses to call
    */
   def buildAnalysis(): Seq[NamedAnalysis]
 
   /**
    * Reset all analyses after e.g. processing one library
-   * @param analyses
+   *
+   * @param analyses analyses to conduct
    */
-  def resetAnalyses(analyses: Seq[NamedAnalysis]): Unit = {
-    analyses.foreach(_.reset())
-  }
+  def resetAnalyses(analyses: Seq[NamedAnalysis]): Unit = analyses.foreach(_.reset())
 
   /**
    * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
    * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
-   *  (List[PairResult], ApplicationPerformanceStatistics) */
+   * (List[PairResult], ApplicationPerformanceStatistics) */
   def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], url: URL): Unit = {
-    analyses.foreach(analysis =>
-      {
-        val splitUrl: Array[String] = url.toString.split("/")
-        val jarname: String = splitUrl(splitUrl.length-1)
-        val version: String = splitUrl(splitUrl.length-2)
-        analysis.produceAnalysisResultForJAR(project, jarname, version)
-      }
+    analyses.foreach(analysis => {
+      val splitUrl: Array[String] = url.toString.split("/")
+      val jarname: String = splitUrl(splitUrl.length - 1)
+      val version: String = splitUrl(splitUrl.length - 2)
+      analysis.produceAnalysisResultForJAR(project, jarname, version)
+    }
     )
   }
 
   /**
    * Prints results to the CLI and writes them to a CSV report if specified by the
    * application configuration.
+   *
    * @param results Results to process
    */
   def handleResults(results: List[PairResult]): Unit = {
@@ -78,6 +75,15 @@ trait AnalysisApplication extends CsvFileOutput {
   }
 
   /**
+   * The main entrypoint for every analysis application. Parses CLI input and controls the application lifecycle.
+   *
+   * @param arguments List of arguments
+   */
+  def main(arguments: Array[String]): Unit = {
+    log.info("Up down strange charm ✨ Please implement main()-method in your application, thank you!")
+  }
+
+  /**
    * Executes a given operation and measures the corresponding execution time (wall clock). Returns a tuple of the operation's
    * result and it's execution time.
    *
@@ -90,15 +96,5 @@ trait AnalysisApplication extends CsvFileOutput {
     val result = codeToExecute.apply()
     val durationMs: Long = (System.nanoTime() - startTime) / 1000000L
     (durationMs, result)
-  }
-
-
-  /**
-   * The main entrypoint for every analysis application. Parses CLI input and controls the application lifecycle.
-   *
-   * @param arguments List of arguments
-   */
-  def main(arguments: Array[String]): Unit = {
-    log.info("Up down strange charm ✨ Please implement main()-method in your application, thank you!")
   }
 }

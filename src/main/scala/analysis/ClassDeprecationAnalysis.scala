@@ -1,15 +1,11 @@
 package analysis
 
-import input.CliParser.OptionMap
-import model.PairResult
-import org.opalj.br.ClassFile
+import just.semver.SemVer
 import org.opalj.br.analyses.Project
 
-import java.io.File
 import java.net.URL
 import scala.util.Try
 import scala.util.matching.Regex
-import just.semver.{ParseError, SemVer}
 
 
 /**
@@ -20,10 +16,9 @@ import just.semver.{ParseError, SemVer}
  */
 class ClassDeprecationAnalysis() extends NamedAnalysis {
 
+  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(0), SemVer.Patch(0), None, None)
   var previousJar: String = ""
   var currentJar: String = ""
-
-  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(0), SemVer.Patch(0), None, None)
   var previousVersion: SemVer = dummySemVer
   var currentVersion: SemVer = dummySemVer
 
@@ -62,7 +57,6 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     // Find deprecation tags in classes for next round
     val deprecationPattern: Regex = "java/lang/Deprecated".r
     var deprecatedClasses: Set[String] = Set()
-    var deprecatedClassesPublic: Set[Boolean] = Set()
 
     // todo
     // nice idea to remove all the regex-matching, but class-info files do not get detected and therefore

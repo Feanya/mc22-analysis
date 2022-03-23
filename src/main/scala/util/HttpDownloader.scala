@@ -5,15 +5,15 @@
 package util
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCode, StatusCodes}
+import akka.stream.ActorMaterializer
+import akka.util.ByteString
+
 import java.io.{ByteArrayInputStream, InputStream}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Try}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.util.ByteString
-import akka.http.scaladsl.model.StatusCode
-import akka.stream.ActorMaterializer
 
 case class HttpException(code: StatusCode) extends Throwable {
   override def getMessage: String = s"Http Request failed with status code ${code.intValue()}"

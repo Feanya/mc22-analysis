@@ -1,6 +1,5 @@
 package analysis
 
-import input.CliParser.OptionMap
 import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -22,18 +21,18 @@ trait NamedAnalysis {
    */
   def analysisName: String
 
-  /**
-   * This method is being called by an enclosing application after this analysis
-   * is initialized, but before any JAR files are being processed. It can be used to initialize
-   * custom data structures.
-   */
-  def initialize(): Unit = { log.debug(s"Analysis ${analysisName} initialized") }
-
   def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double]
 
   /**
    * This method shall be called after each library (GA) to flush partial results
    */
   def reset(): Unit = this.initialize()
+
+  /**
+   * This method is being called by an enclosing application after this analysis
+   * is initialized, but before any JAR files are being processed. It can be used to initialize
+   * custom data structures.
+   */
+  def initialize(): Unit = log.debug(s"Analysis ${analysisName} initialized")
 
 }

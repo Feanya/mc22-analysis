@@ -8,7 +8,7 @@ import java.net.URL
 import scala.util.{Failure, Success}
 
 
-class DownloadLib (){
+class DownloadLib() {
 
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -19,10 +19,12 @@ class DownloadLib (){
         println(s"Initializing OPAL project for input $url ...")
         val projectClasses = OPALProjectHelper.readClassesFromJarStream(jarStream, url)
 
+        // build and return the project
         val project = OPALProjectHelper.buildOPALProject(
           projectClasses.get, List.empty, asLibrary = false, excludeJRE = true)
         log.debug(project.statistics.mkString("\n"))
         Some(project)
+
       case Failure(ex@HttpException(code)) if code.intValue() == 404 =>
         log.warn(s"${ex.getMessage} \nNo JAR file could be located at $url")
         None

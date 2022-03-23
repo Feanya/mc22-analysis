@@ -12,6 +12,14 @@ import scala.concurrent.duration.Duration
 
 
 class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "data") {
+  def path = column[String]("path")
+
+  def classifier = column[Option[String]]("classifier")
+
+  def timestamp = column[Timestamp]("timestamp")
+
+  def * = (id, groupid, artifactname, version, versionscheme)
+
   def id = column[Int]("id")
 
   def groupid = column[String]("groupid")
@@ -20,43 +28,20 @@ class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "dat
 
   def version = column[String]("version")
 
-  def path = column[String]("path")
-
-  def classifier = column[Option[String]]("classifier")
-
   def versionscheme = column[Int]("versionscheme")
-
-  def timestamp = column[Timestamp]("timestamp")
-
-  def * = (id, groupid, artifactname, version, versionscheme)
 }
 
 
-
 class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") {
+  def * = (vs, ga)
+
   def vs = column[Int]("vs")
 
   def ga = column[String]("ga")
-
-  def * = (vs, ga)
 }
 
 class PostgresUtils() {
   val log: Logger = LoggerFactory.getLogger("")
-
-  private def readConfigAndGetDatabaseConnection: PostgresProfile.backend.DatabaseDef = {
-    Class.forName("org.postgresql.Driver")
-
-    log.debug("Reading config…")
-    val conf = ConfigFactory.load()
-
-    val url: String = conf.getString("database.url")
-    val user: String = conf.getString("database.user")
-    val password: String = conf.getString("database.password")
-
-    log.debug(s"Connecting to $user@$url")
-    Database.forURL(url, user, password)
-  }
 
   /** Get GAV-jar-URLs from all vs of a GA
    *
@@ -77,10 +62,10 @@ class PostgresUtils() {
         .filter(row =>
           // Correct GA
           row.artifactname === artifactname && row.groupid === groupid
-          // only primary artifacts
-          && row.classifier.isEmpty
-          // only M.M and M.M.P since we don't care about pre-releases
-          && (row.versionscheme === 1 || row.versionscheme === 2)
+            // only primary artifacts
+            && row.classifier.isEmpty
+            // only M.M and M.M.P since we don't care about pre-releases
+            && (row.versionscheme === 1 || row.versionscheme === 2)
         )
         // todo better sorting
         .sortBy(_.timestamp)
@@ -99,11 +84,8 @@ class PostgresUtils() {
     }
   }
 
-
   /** Get a specific amount of GAs
-   *
-   * @param groupid      G
-   * @param artifactname A
+   * @param limit maximal amount of libraries
    * @return sequence of URLs
    */
   def getGAs(limit: Int): Seq[(String, String)] = {
@@ -115,7 +97,7 @@ class PostgresUtils() {
       val gavs = TableQuery[AggregatedGA]
 
       log.info("GAVs:")
-      //val f = db.run(gavs.take(5).result)
+
       val a = db.run(gavs
         .sortBy(_.vs)
         .take(limit)
@@ -132,6 +114,20 @@ class PostgresUtils() {
     finally {
       db.close()
     }
+  }
+
+  private def readConfigAndGetDatabaseConnection: PostgresProfile.backend.DatabaseDef = {
+    Class.forName("org.postgresql.Driver")
+
+    log.debug("Reading config…")
+    val conf = ConfigFactory.load()
+
+    val url: String = conf.getString("database.url")
+    val user: String = conf.getString("database.user")
+    val password: String = conf.getString("database.password")
+
+    log.debug(s"Connecting to $user@$url")
+    Database.forURL(url, user, password)
   }
 
 }

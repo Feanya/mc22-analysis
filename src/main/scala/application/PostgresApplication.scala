@@ -26,16 +26,23 @@ object PostgresApplicationObject extends PostgresApplication {
   val urls_seq: Seq[Seq[URL]] = {
     // get library-coordinates from database
     postgresInteractor.getGAs(5)
-    // get URLS for all versions from database
-    .map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
+      // get URLS for all versions from database
+      .map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
   }
 
   val downloader = new DownloadLib()
-  urls_seq.foreach(lib =>
+  // urls_seq is two-dimensional: first dimension is of libraries…
+  urls_seq.foreach(lib => {
     // download and analyse
-    lib.foreach(url => downloader.downloadAndLoadOne(url) match {
-      // run all analyses for one project per round
-      case Some(project) => calculateResults(analyses, project, url)
-      case None => log.error(s"Could not load $url")
-  }))
+    // …second dimension has all urls to the versions of one library
+    lib.foreach(url =>
+      downloader.downloadAndLoadOne(url) match {
+        // run all analyses for one project per round
+        case Some(project) =>
+          calculateResults(analyses, project, url)
+        case None => log.error(s"Could not load $url")
+      })
+    this.resetAnalyses(analyses)
+  }
+  )
 }

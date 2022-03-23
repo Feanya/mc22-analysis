@@ -106,10 +106,10 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       log.info(s"🗑 Deprecated in A and removed in B ✔️: ${deprAndRemovedClasses.size}")
 
       log.info(s"🗑 Deprecated but not removed ❌: ${deprNotRemovedClasses.size}")
-      println(deprNotRemovedClasses.take(10).mkString("\n"))
+      log.debug(deprNotRemovedClasses.take(10).mkString("\n"))
 
       log.info(s"❌ Removed but not deprecated ❌: ${removedNotDeprClasses.size}")
-      println(removedNotDeprClasses.take(10).mkString("\n"))
+      log.debug(removedNotDeprClasses.take(10).mkString("\n"))
 
     } else {
       log.info(s"Initial round on $currentJar")
@@ -138,10 +138,4 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    */
   override def analysisName: String = "ClassDeprecation"
 
-  /**
-   * This method shall be called after each library (GA) to flush partial results
-   */
-  override def reset(): Unit = this.initialize()
 }
-
-

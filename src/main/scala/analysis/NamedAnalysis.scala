@@ -34,6 +34,6 @@ trait NamedAnalysis {
   /**
    * This method shall be called after each library (GA) to flush partial results
    */
-  def reset(): Unit
+  def reset(): Unit = this.initialize()
 
 }

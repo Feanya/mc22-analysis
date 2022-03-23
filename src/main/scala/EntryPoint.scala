@@ -1,4 +1,4 @@
-import application.{PostgresApplication, PostgresApplicationObject}
+import application.PostgresApplication
 
 object EntryPoint {
 
@@ -6,9 +6,10 @@ object EntryPoint {
 
     if (args.contains("--test")) {
       println("SFA")
-      PostgresApplicationObject.main(args)
     } else {
-      println("MFA")
+      println("Run: PostgresAnalysis! \uD83D\uDE80")
+      val app = new PostgresApplication()
+      app.main(args)
     }
 
   }

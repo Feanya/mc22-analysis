@@ -87,7 +87,7 @@ trait AnalysisApplication extends CsvFileOutput {
    *
    * @param arguments List of arguments
    */
-  final def main(arguments: Array[String]): Unit = {
-    log.info("Uptown skate funk")
+  def main(arguments: Array[String]): Unit = {
+    log.info("Up down strange charm ✨ Please implement main()-method in your application, thank you!")
   }
 }

@@ -30,15 +30,26 @@ trait AnalysisApplication extends CsvFileOutput {
   def buildAnalysis(): Seq[NamedAnalysis]
 
   /**
+   * Reset all analyses after e.g. processing one library
+   * @param analyses
+   */
+  def resetAnalyses(analyses: Seq[NamedAnalysis]): Unit = {
+    analyses.foreach(_.reset())
+  }
+
+  /**
    * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
    * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
    *  (List[PairResult], ApplicationPerformanceStatistics) */
   def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], url: URL): Unit = {
     analyses.foreach(analysis =>
-      analysis.produceAnalysisResultForJAR(
-        project,
-        // last part of the path is the jarname
-        url.toString.split("/").last))
+      {
+        val splitUrl: Array[String] = url.toString.split("/")
+        val jarname: String = splitUrl(splitUrl.length-1)
+        val version: String = splitUrl(splitUrl.length-2)
+        analysis.produceAnalysisResultForJAR(project, jarname, version)
+      }
+    )
   }
 
   /**

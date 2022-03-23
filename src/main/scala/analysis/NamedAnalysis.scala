@@ -29,7 +29,7 @@ trait NamedAnalysis {
    */
   def initialize(): Unit = { log.debug(s"Analysis ${analysisName} initialized") }
 
-  def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double]
+  def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double]
 
   /**
    * This method shall be called after each library (GA) to flush partial results

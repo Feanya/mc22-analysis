@@ -88,7 +88,7 @@ class PostgresUtils() {
         .result)
 
       val b = Await.result(a, Duration.Inf)
-      println(s"$groupid.$artifactname versions in database sorted by timestamp")
+      println(s"💬 $groupid.$artifactname versions in database sorted by timestamp:")
       b.distinct.foreach(println(_))
 
       b.distinct.map(v => new URL(s"https://repo1.maven.org/maven2/$v"))

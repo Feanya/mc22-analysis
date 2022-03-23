@@ -9,6 +9,7 @@ import java.io.File
 import java.net.URL
 import scala.util.Try
 import scala.util.matching.Regex
+import just.semver.{ParseError, SemVer}
 
 
 /**
@@ -21,8 +22,10 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
 
   var previousJar: String = ""
   var currentJar: String = ""
-  var previousVersion: String = ""
-  var currentVersion: String = ""
+
+  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(0), SemVer.Patch(0), None, None)
+  var previousVersion: SemVer = dummySemVer
+  var currentVersion: SemVer = dummySemVer
 
   var previousClasses: scala.collection.Set[String] = Set()
   var previousDepr: scala.collection.Set[String] = Set()
@@ -37,18 +40,20 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     previousJar = ""
     currentJar = ""
     roundCounter = 0
+    previousVersion = dummySemVer
+    currentVersion = dummySemVer
     previousClasses = Set()
     previousDepr = Set()
   }
 
 
   /**
-   * @param project       Fully initialized OPAL project representing the JAR file under analysis
+   * @param project Fully initialized OPAL project representing the JAR file under analysis
    * @return Try[T] object holding the intermediate result, if successful
    *         Try[T] = Try[(Double)]
    *         String: entityIdent
    */
-  def produceAnalysisResultForJAR(project: Project[URL], jarname: String): Try[Double] = {
+  def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double] = {
     currentJar = jarname
 
     // Get the fully qualified names (fqn) of all classes in a set
@@ -73,9 +78,11 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       }
     )
 
+    currentVersion = parseSemVerString(version)
 
     if (roundCounter > 0) {
-      log.warn(s"Calculating class-differences between: $previousJar and $currentJar…")
+      log.warn(s"Calculating class-differences between: " +
+        s"$previousJar ($previousVersion) and $currentJar ($currentVersion)… ()")
       val allClasses = currentClasses.union(previousClasses)
       val maintainedClasses = currentClasses.intersect(previousClasses)
 
@@ -112,10 +119,18 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     previousJar = currentJar
     previousClasses = currentClasses
     previousDepr = deprecatedClasses
+    previousVersion = currentVersion
     roundCounter += 1
 
     // return result
     Try(0)
+  }
+
+  private def parseSemVerString(version: String): SemVer = {
+    SemVer.parse(version) match {
+      case Right(v) => v
+      case _ => log.error(s"Couldn't parse $version"); dummySemVer
+    }
   }
 
   /**

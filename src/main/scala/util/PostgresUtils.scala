@@ -11,7 +11,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 
-class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "data") {
+private class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "data") {
   def path = column[String]("path")
 
   def classifier = column[Option[String]]("classifier")
@@ -32,7 +32,7 @@ class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "dat
 }
 
 
-class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") {
+private class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") {
   def * = (vs, ga)
 
   def vs = column[Int]("vs")
@@ -41,7 +41,7 @@ class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") 
 }
 
 class PostgresUtils() {
-  val log: Logger = LoggerFactory.getLogger("")
+  val log: Logger = LoggerFactory.getLogger("PostgresUtils")
 
   /** Get GAV-jar-URLs from all vs of a GA
    *
@@ -52,13 +52,10 @@ class PostgresUtils() {
   def getURLsAllVersions(groupid: String, artifactname: String): Seq[URL] = {
     val db = this.readConfigAndGetDatabaseConnection
 
-    log.info(s"Getting URLs of $groupid:$artifactname from database…")
+    log.debug(s"Getting URLs of $groupid:$artifactname from database…")
 
     try {
-      val gas = TableQuery[Data]
-
-      log.info("Distinct GAs:")
-      val a = db.run(gas
+      val a = db.run(TableQuery[Data]
         .filter(row =>
           // Correct GA
           row.artifactname === artifactname && row.groupid === groupid
@@ -67,7 +64,6 @@ class PostgresUtils() {
             // only M.M and M.M.P since we don't care about pre-releases
             && (row.versionscheme === 1 || row.versionscheme === 2)
         )
-        // todo better sorting
         .sortBy(_.timestamp)
         .map(_.path)
         .result)
@@ -91,24 +87,23 @@ class PostgresUtils() {
   def getGAs(limit: Int): Seq[(String, String)] = {
     val db = readConfigAndGetDatabaseConnection
 
-    log.info(s"Getting GA-combinations from database…")
+    log.info(s"Getting GAs from database…")
 
     try {
       val gavs = TableQuery[AggregatedGA]
 
-      log.info("GAVs:")
-
-      val a = db.run(gavs
-        .sortBy(_.vs)
+      val ga = Await.result(db.run(gavs
+        .sortBy(_.ga)
         .take(limit)
         .map(_.ga)
-        .result)
+        .result), Duration.Inf)
 
-      val b = Await.result(a, Duration.Inf)
-      log.debug(s"Taken ${b.length} GAs from database")
-      b.foreach(println(_))
+      val gaCount = Await.result(db.run(gavs.length.result), Duration.Inf)
 
-      b.map(row => // split into groupid and artifactname
+      log.info(s"Got ${ga.length} out of ${gaCount} GAs from database")
+      ga.foreach(ga => log.debug(ga))
+
+      ga.map(row => // split into groupid and artifactname
         (row.split(':').head, row.split(':').last))
     }
     finally {

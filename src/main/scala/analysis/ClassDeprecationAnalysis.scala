@@ -25,6 +25,11 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
   var previousClasses: scala.collection.Set[String] = Set()
   var previousDepr: scala.collection.Set[String] = Set()
 
+  // library info
+  var allDepr: scala.collection.Set[String] = Set()
+  var groupid: String = ""
+  var artifactname: String = ""
+
   var roundCounter: Integer = 0
 
 
@@ -89,19 +94,20 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       val deprNotRemovedClasses = previousDepr.diff(removedClasses)
       val removedNotDeprClasses = removedClasses.diff(previousDepr)
 
+      // Library analysis
+      allDepr = allDepr.union(deprecatedClasses)
+
       // Print stats
       log.info(s"All classes:        ${allClasses.size}")
       log.info(s"maintained classes: ${maintainedClasses.size}")
       log.info(s"Added classes:      ➕${newClasses.size}")
       log.info(s"Removed classes:    ➖${removedClasses.size}")
 
+      log.info(s"🗑 Deprecations️ overall: ${allDepr.size}")
       log.info(s"🗑 Deprecations️ in version A: ${previousDepr.size}")
-
       log.info(s"🗑 Deprecated in A and removed in B ✔️: ${deprAndRemovedClasses.size}")
-
       log.info(s"🗑 Deprecated but not removed ❌: ${deprNotRemovedClasses.size}")
       log.debug(deprNotRemovedClasses.take(10).mkString("\n"))
-
       log.info(s"❌ Removed but not deprecated ❌: ${removedNotDeprClasses.size}")
       log.debug(removedNotDeprClasses.take(10).mkString("\n"))
 

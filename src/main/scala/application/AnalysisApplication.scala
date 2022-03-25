@@ -55,6 +55,10 @@ trait AnalysisApplication extends CsvFileOutput {
    * @param results Results to process
    */
   def handleResults(results: List[PairResult]): Unit = {
+    // todo write result in database with foreign case
+
+
+
     // todo: add output file
     /*if (appConfiguration.outFileOption.isDefined) {
       log.info(s"Writing results to output file ${appConfiguration.outFileOption.get}")

@@ -12,7 +12,7 @@ import java.io.File
  * @param success Boolean indicating the success of all calculations involved
  * @param results Iterable of Results for the files
  */
-case class PairResult (analysisName: String, jarFileOne: File, jarFileTwo: File, success: Boolean, results: Iterable[Result])
+case class PairResult (analysisName: String, jarFileOne: File, jarFileTwo: File, success: Boolean, results: Iterable[TwoJarResult])
 
 object PairResult {
   /**
@@ -33,5 +33,4 @@ object PairResult {
  * @param value Value calculated for this entity
  */
 
-
-case class Result(jarNameOne: String, jarNameTwo: String, metricName: String, value: Double)
+case class TwoJarResult(jarNameOne: String, jarNameTwo: String, metricName: String, value: Double)

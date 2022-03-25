@@ -1,6 +1,7 @@
 package util
 
 import com.typesafe.config.ConfigFactory
+import just.semver.SemVer
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -49,7 +50,7 @@ class PostgresUtils() {
    * @param artifactname A
    * @return sequence of URLs
    */
-  def getURLsAllVersions(groupid: String, artifactname: String): Seq[URL] = {
+  def getURLsAndVersionsSVOnly(groupid: String, artifactname: String): Seq[(URL, SemVer)] = {
     val db = this.readConfigAndGetDatabaseConnection
 
     log.debug(s"Getting URLs of $groupid:$artifactname from database…")
@@ -65,15 +66,18 @@ class PostgresUtils() {
             && (row.versionscheme === 1 || row.versionscheme === 2)
         )
         .sortBy(_.timestamp)
-        .map(_.path)
+        .map(gav => (gav.path, gav.version))
         .result)
 
-      val b = Await.result(a, Duration.Inf)
-      println(s"💬 $groupid.$artifactname versions in database sorted by timestamp:")
-      b.distinct.foreach(println(_))
+      val urlAndVersionString: Seq[(String, String)] = Await.result(a, Duration.Inf)
 
-      b.distinct.map(v => new URL(s"https://repo1.maven.org/maven2/$v"))
+      val SVU = new SemVerUtils()
+      val urlAndVersion: Seq[(URL, SemVer)] =
+        urlAndVersionString.map(v =>
+          (new URL(s"https://repo1.maven.org/maven2/${v._1}"),
+            SVU.parseSemVerString(v._2)))
 
+      urlAndVersion
     }
     finally {
       db.close()

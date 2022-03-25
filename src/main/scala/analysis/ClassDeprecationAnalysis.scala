@@ -1,12 +1,13 @@
 package analysis
 
 import just.semver.SemVer
+import model.LibraryResult
 import org.opalj.br.analyses.Project
 
 import java.net.URL
 import scala.util.Try
 import scala.util.matching.Regex
-
+import util.SemVerUtils
 
 /**
  * based on impl.group1.EvolutionAnalysis
@@ -15,8 +16,9 @@ import scala.util.matching.Regex
  *               Optional CLI arguments:
  */
 class ClassDeprecationAnalysis() extends NamedAnalysis {
+  val SVU = new SemVerUtils()
+  val dummySemVer: SemVer = SVU.dummySemVer
 
-  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(0), SemVer.Patch(0), None, None)
   var previousJar: String = ""
   var currentJar: String = ""
   var previousVersion: SemVer = dummySemVer
@@ -77,11 +79,12 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       }
     )
 
-    currentVersion = parseSemVerString(version)
+    currentVersion = SVU.parseSemVerString(version)
 
     if (roundCounter > 0) {
-      log.warn(s"Calculating class-differences between: " +
-        s"$previousJar ($previousVersion) and $currentJar ($currentVersion)… ()")
+      log.warn(s"Calculating class-differences between: \n" +
+        s"$previousJar ($previousVersion) and \n" +
+        s"$currentJar ($currentVersion)… \n(${SVU.calculateVersionjump(previousVersion, currentVersion)})")
       val allClasses = currentClasses.union(previousClasses)
       val maintainedClasses = currentClasses.intersect(previousClasses)
 
@@ -126,16 +129,13 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     Try(0)
   }
 
-  private def parseSemVerString(version: String): SemVer = {
-    SemVer.parse(version) match {
-      case Right(v) => v
-      case _ => log.error(s"Couldn't parse $version"); dummySemVer
-    }
-  }
 
   /**
    * The name for this analysis implementation. Will be used to include and exclude analyses via CLI.
    */
   override def analysisName: String = "ClassDeprecation"
 
+  override def getLibraryResults(): Iterable[LibraryResult] = {
+    List(analysisName,  allDepr.size)
+  }
 }

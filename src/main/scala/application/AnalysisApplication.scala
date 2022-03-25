@@ -7,6 +7,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import output.CsvFileOutput
 
 import java.net.URL
+import org.slf4j.profiler.Profiler
 
 /**
  * Base trait for applications that execute any kind of analysis on JAR files. Provides Lifecycle Hooks,
@@ -19,6 +20,9 @@ trait AnalysisApplication extends CsvFileOutput {
    */
   protected final val log: Logger = LoggerFactory.getLogger(this.getClass)
   // todo set log level to debug
+
+  protected final val profiler: Profiler = new Profiler("Analysis-Application basic")
+
 
   /**
    * to be implemented by the application: collect all analyses which shall be conducted

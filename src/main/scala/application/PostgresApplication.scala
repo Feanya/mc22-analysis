@@ -1,37 +1,62 @@
 package application
 
 import analysis.{ClassDeprecationAnalysis, NamedAnalysis}
+import just.semver.SemVer
 import util.{DownloadLib, PostgresUtils}
 
 import java.net.URL
 
 class PostgresApplication extends AnalysisApplication {
   override def main(arguments: Array[String]): Unit = {
+    val dryrun: Boolean = false
+    val limit: Int = 25
     val analyses: Seq[NamedAnalysis] = buildAnalysis()
 
+    profiler.start("Get URLs and Versions")
     val postgresInteractor = new PostgresUtils()
-    val urls_seq: Seq[Seq[URL]] = {
+    val urlsVersionsSortedByTimestamp: Seq[Seq[(URL, SemVer)]] = {
       // get library-coordinates from database
-      postgresInteractor.getGAs(5)
+      postgresInteractor.getGAs(limit)
         // get URLS for all versions from database
-        .map(ga => postgresInteractor.getURLsAllVersions(ga._1, ga._2))
+        .map(ga => postgresInteractor.getURLsAndVersionsSVOnly(ga._1, ga._2))
     }
 
-    val downloader = new DownloadLib()
-    // urls_seq is two-dimensional: first dimension is of libraries…
-    urls_seq.foreach(lib => {
-      // download and analyse
-      // …second dimension has all urls to the versions of one library
-      lib.foreach(url =>
-        downloader.downloadAndLoadOne(url) match {
-          // run all analyses for one project per round
-          case Some(project) =>
-            calculateResults(analyses, project, url)
-          case None => log.error(s"Could not load $url")
-        })
-      this.resetAnalyses(analyses)
+    // sort
+    profiler.start("Sort and filter URLs")
+    val urlsVersionsSortedBySV = urlsVersionsSortedByTimestamp.map(_.sortWith(_._2 < _._2))
+    urlsVersionsSortedBySV.foreach(ga =>
+      if(ga.isEmpty) log.warn(s"Empty GA: ${ga}")
+      else if(ga.length == 1) {log.debug(s"GA with one version: ${ga}")}
+      )
+    val relevantGAsBySV = urlsVersionsSortedBySV.filter(ga => ga.length > 1)
+
+    if(!dryrun) {
+      profiler.start("Analysis")
+      val downloader = new DownloadLib()
+      // urls_seq is two-dimensional: first dimension is of libraries…
+      relevantGAsBySV.foreach(lib => {
+        // download and analyse
+        // …second dimension has all urls to the versions of one library
+        lib.foreach(tuple =>
+          downloader.downloadAndLoadOne(tuple._1) match {
+            // run all analyses for one project per round
+            case Some(project) =>
+              calculateResults(analyses, project, tuple._1)
+            case None => log.error(s"Could not load ${tuple._1}")
+          })
+        this.resetAnalyses(analyses)
+      }
+      )
     }
-    )
+
+    val c = relevantGAsBySV.map(_.length).sorted
+    val m = c.groupBy(identity).mapValues(_.size)
+
+    log.info(c.mkString(", "))
+    log.info(s"✔ Done! Looked with limit ${limit} at ${c.length} GAs with ${relevantGAsBySV.flatten.length} overall relevant versions: " +
+      s"\n(#versions, #libraries)\n${m.toList.sortBy(_._1).mkString("\n")}️")
+
+    profiler.stop().print()
   }
 
   /**

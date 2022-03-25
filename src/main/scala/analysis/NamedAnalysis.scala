@@ -1,5 +1,6 @@
 package analysis
 
+import model.{LibraryResult}
 import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -23,6 +24,8 @@ trait NamedAnalysis {
 
   def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double]
 
+  def getLibraryResults(): Iterable[LibraryResult]
+
   /**
    * This method shall be called after each library (GA) to flush partial results
    */
@@ -34,5 +37,5 @@ trait NamedAnalysis {
    * custom data structures.
    */
   def initialize(): Unit = log.debug(s"Analysis ${analysisName} initialized")
-
+// todo: include groupid and artifactname?
 }

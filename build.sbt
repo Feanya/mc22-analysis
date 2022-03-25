@@ -21,7 +21,9 @@ lazy val root = (project in file("."))
 libraryDependencies += "com.opencsv" % "opencsv" % "5.6"
 
 // Logging
+libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.36"
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.7.36"
+libraryDependencies += "org.slf4j" % "slf4j-ext" % "1.7.36"
 
 // Opal: Code analysis
 val opalVersion = "4.0.0"

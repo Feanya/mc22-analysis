@@ -1,10 +1,8 @@
 package application
 
 import analysis.{ClassDeprecationAnalysis, NamedAnalysis}
-import just.semver.SemVer
+import model.JarInfo
 import util.{DownloadLib, PostgresUtils}
-
-import java.net.URL
 
 class PostgresApplication extends AnalysisApplication {
   override def main(arguments: Array[String]): Unit = {
@@ -12,13 +10,14 @@ class PostgresApplication extends AnalysisApplication {
     val limit: Int = 25
     val analyses: Seq[NamedAnalysis] = buildAnalysis()
 
-    profiler.start("Get URLs and Versions")
+    profiler.start("Get sorted JarInfos")
     val postgresInteractor = new PostgresUtils()
-    val urlsVersionsSortedByTimestamp: Seq[Seq[(URL, SemVer)]] = {
+    val jarInfosGAs: Seq[Seq[JarInfo]] = {
       // get library-coordinates from database
       postgresInteractor.getGAs(limit)
         // get URLS for all versions from database
-        .map(ga => postgresInteractor.getURLsAndVersionsSVOnly(ga._1, ga._2))
+        .map(ga => postgresInteractor.getJarInfoSemVerOnly(ga._1, ga._2))
+        .map(_.sorted)
     }
 
     // sort
@@ -30,19 +29,19 @@ class PostgresApplication extends AnalysisApplication {
       )
     val relevantGAsBySV = urlsVersionsSortedBySV.filter(ga => ga.length > 1)
 
-    if(!dryrun) {
+    if (!dryrun) {
       profiler.start("Analysis")
       val downloader = new DownloadLib()
       // urls_seq is two-dimensional: first dimension is of libraries…
       relevantGAsBySV.foreach(lib => {
         // download and analyse
         // …second dimension has all urls to the versions of one library
-        lib.foreach(tuple =>
-          downloader.downloadAndLoadOne(tuple._1) match {
+        lib.foreach(jarinfo =>
+          downloader.downloadAndLoadOne(jarinfo.url) match {
             // run all analyses for one project per round
             case Some(project) =>
-              calculateResults(analyses, project, tuple._1)
-            case None => log.error(s"Could not load ${tuple._1}")
+              this.handleResults(calculateResults(analyses, project, jarinfo))
+            case None => log.error(s"Could not load ${jarinfo.url}")
           })
         this.resetAnalyses(analyses)
       }

@@ -1,7 +1,7 @@
 package application
 
 import analysis.NamedAnalysis
-import model.PairResult
+import model.{JarInfo, LibraryResult, PairResult}
 import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 import output.CsvFileOutput
@@ -42,15 +42,13 @@ trait AnalysisApplication extends CsvFileOutput {
    * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
    * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
    * (List[PairResult], ApplicationPerformanceStatistics) */
-  def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], url: URL): Unit = {
-    analyses.foreach(analysis => {
-      val splitUrl: Array[String] = url.toString.split("/")
-      val jarname: String = splitUrl(splitUrl.length - 1)
-      val version: String = splitUrl(splitUrl.length - 2)
-      analysis.produceAnalysisResultForJAR(project, jarname, version)
+  def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], jarInfo: JarInfo): Seq[PairResult] =
+  analyses.map(analysis =>
+    analysis.produceAnalysisResultForJAR(project, jarInfo) match{
+      case Some(result) => result
+      case None => PairResult.analysisFailed(analysis.analysisName, jarInfo, jarInfo)
     }
-    )
-  }
+  )
 
   /**
    * Prints results to the CLI and writes them to a CSV report if specified by the
@@ -91,18 +89,4 @@ trait AnalysisApplication extends CsvFileOutput {
     log.info("Up down strange charm ✨ Please implement main()-method in your application, thank you!")
   }
 
-  /**
-   * Executes a given operation and measures the corresponding execution time (wall clock). Returns a tuple of the operation's
-   * result and it's execution time.
-   *
-   * @param codeToExecute The function to measure
-   * @tparam T Function return type
-   * @return Tuple of execution time in MS and the function's result
-   */
-  protected def measureExecutionTime[T](implicit codeToExecute: () => T): (Long, T) = {
-    val startTime = System.nanoTime()
-    val result = codeToExecute.apply()
-    val durationMs: Long = (System.nanoTime() - startTime) / 1000000L
-    (durationMs, result)
-  }
 }

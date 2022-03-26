@@ -1,11 +1,11 @@
 package analysis
 
-import model.{LibraryResult}
+import model._
 import org.opalj.br.analyses.Project
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.URL
-import scala.util.Try
+
 
 /**
  * Base trait for all analyses. Provides access to common functionality including logging and the analysis name.
@@ -22,9 +22,9 @@ trait NamedAnalysis {
    */
   def analysisName: String
 
-  def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double]
+  def produceAnalysisResultForJAR(project: Project[URL], jarInfo: JarInfo): Option[PairResult]
 
-  def getLibraryResults(): Iterable[LibraryResult]
+  def getLibraryResult: LibraryResult
 
   /**
    * This method shall be called after each library (GA) to flush partial results
@@ -37,5 +37,4 @@ trait NamedAnalysis {
    * custom data structures.
    */
   def initialize(): Unit = log.debug(s"Analysis ${analysisName} initialized")
-// todo: include groupid and artifactname?
 }

@@ -1,7 +1,7 @@
 package util
 
 import com.typesafe.config.ConfigFactory
-import just.semver.SemVer
+import model.JarInfo
 import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -69,15 +69,8 @@ class PostgresUtils() {
         .map(gav => (gav.path, gav.version))
         .result)
 
-      val urlAndVersionString: Seq[(String, String)] = Await.result(a, Duration.Inf)
-
-      val SVU = new SemVerUtils()
-      val urlAndVersion: Seq[(URL, SemVer)] =
-        urlAndVersionString.map(v =>
-          (new URL(s"https://repo1.maven.org/maven2/${v._1}"),
-            SVU.parseSemVerString(v._2)))
-
-      urlAndVersion
+      val rows = Await.result(rowsFuture, Duration.Inf)
+      rows.map(row => new JarInfo(row))
     }
     finally {
       db.close()

@@ -1,13 +1,13 @@
 package analysis
 
 import just.semver.SemVer
-import model.LibraryResult
+import model._
 import org.opalj.br.analyses.Project
+import util.SemVerUtils
 
 import java.net.URL
-import scala.util.Try
 import scala.util.matching.Regex
-import util.SemVerUtils
+
 
 /**
  * based on impl.group1.EvolutionAnalysis
@@ -39,11 +39,9 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    * Prepare all variables
    */
   override def initialize(): Unit = {
-    previousJar = ""
-    currentJar = ""
-    roundCounter = 0
-    previousVersion = dummySemVer
-    currentVersion = dummySemVer
+    previousJarInfo = JarInfo.initial
+    currentJarInfo = JarInfo.initial
+
     previousClasses = Set()
     previousDepr = Set()
   }
@@ -55,8 +53,8 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    *         Try[T] = Try[(Double)]
    *         String: entityIdent
    */
-  def produceAnalysisResultForJAR(project: Project[URL], jarname: String, version: String): Try[Double] = {
-    currentJar = jarname
+  def produceAnalysisResultForJAR(project: Project[URL], jarInfo: JarInfo): Option[PairResult] = {
+    currentJarInfo = jarInfo
 
     // Get the fully qualified names (fqn) of all classes in a set
     val currentClasses: Set[String] = project.allProjectClassFiles.map(_.fqn).toSet
@@ -64,6 +62,7 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     // Find deprecation tags in classes for next round
     val deprecationPattern: Regex = "java/lang/Deprecated".r
     var deprecatedClasses: Set[String] = Set()
+    var result: Option[PairResult] = None
 
     // todo
     // nice idea to remove all the regex-matching, but class-info files do not get detected and therefore
@@ -82,9 +81,10 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     currentVersion = SVU.parseSemVerString(version)
 
     if (roundCounter > 0) {
-      log.warn(s"Calculating class-differences between: \n" +
-        s"$previousJar ($previousVersion) and \n" +
-        s"$currentJar ($currentVersion)… \n(${SVU.calculateVersionjump(previousVersion, currentVersion)})")
+      log.debug(s"Calculating class-differences between: \n" +
+        s"${previousJarInfo.jarname} and \n" +
+        s"${currentJarInfo.jarname}… \n" +
+        s"(${SVU.calculateVersionjump(previousJarInfo.version, currentJarInfo.version)})")
       val allClasses = currentClasses.union(previousClasses)
       val maintainedClasses = currentClasses.intersect(previousClasses)
 
@@ -113,22 +113,33 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       log.debug(deprNotRemovedClasses.take(10).mkString("\n"))
       log.info(s"❌ Removed but not deprecated ❌: ${removedNotDeprClasses.size}")
       log.debug(removedNotDeprClasses.take(10).mkString("\n"))
-
+      result = Some(new PairResult(
+        analysisName,
+        previousJarInfo, currentJarInfo,
+        versionjump = SVU.calculateVersionjump(previousJarInfo.version, currentJarInfo.version),
+        true,
+        Seq(Result("CDeprecatedInPrev", previousDepr.size),
+          Result("CDeprecatedAndRemoved", deprAndRemovedClasses.size),
+          Result("CDeprecatedNotRemoved", deprNotRemovedClasses.size))))
     } else {
-      log.info(s"Initial round on $currentJar")
+      log.info(s"Initial round on ${currentJarInfo.jarname}")
     }
 
     // prepare for next round
-    previousJar = currentJar
+    previousJarInfo = currentJarInfo
     previousClasses = currentClasses
     previousDepr = deprecatedClasses
     previousVersion = currentVersion
     roundCounter += 1
 
     // return result
-    Try(0)
+    result
   }
 
+  override def getLibraryResult: LibraryResult = {
+    new LibraryResult(analysisName, currentJarInfo.groupid, currentJarInfo.artifactname, true,
+      List(Result("allDeprecations", allDepr.size)))
+  }
 
   /**
    * The name for this analysis implementation. Will be used to include and exclude analyses via CLI.

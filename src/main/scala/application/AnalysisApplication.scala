@@ -51,8 +51,7 @@ trait AnalysisApplication extends CsvFileOutput {
   )
 
   /**
-   * Prints results to the CLI and writes them to a CSV report if specified by the
-   * application configuration.
+   * Prints results to the CLI and writes them to the database
    *
    * @param results Results to process
    */
@@ -78,6 +77,11 @@ trait AnalysisApplication extends CsvFileOutput {
       }
     }
 
+  /**
+   * Write results of library analyses to the database
+   * */
+  def handleLibraryResults(results: Iterable[LibraryResult]): Unit = {
+    println(results.mkString("\n"))
   }
 
   /**

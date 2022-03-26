@@ -6,40 +6,9 @@ import org.slf4j.{Logger, LoggerFactory}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
-import java.net.URL
 import java.sql.Timestamp
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
-
-private class Data(tag: Tag) extends Table[(Int, String, String, String, Int)](tag, "data") {
-  def path = column[String]("path")
-
-  def classifier = column[Option[String]]("classifier")
-
-  def timestamp = column[Timestamp]("timestamp")
-
-  def * = (id, groupid, artifactname, version, versionscheme)
-
-  def id = column[Int]("id")
-
-  def groupid = column[String]("groupid")
-
-  def artifactname = column[String]("artifactname")
-
-  def version = column[String]("version")
-
-  def versionscheme = column[Int]("versionscheme")
-}
-
-
-private class AggregatedGA(tag: Tag) extends Table[(Int, String)](tag, "aggregated_ga") {
-  def * = (vs, ga)
-
-  def vs = column[Int]("vs")
-
-  def ga = column[String]("ga")
-}
 
 class PostgresUtils() {
   val log: Logger = LoggerFactory.getLogger("PostgresUtils")
@@ -50,13 +19,13 @@ class PostgresUtils() {
    * @param artifactname A
    * @return sequence of URLs
    */
-  def getURLsAndVersionsSVOnly(groupid: String, artifactname: String): Seq[(URL, SemVer)] = {
+  def getJarInfoSemVerOnly(groupid: String, artifactname: String): Seq[(JarInfo)] = {
     val db = this.readConfigAndGetDatabaseConnection
 
-    log.debug(s"Getting URLs of $groupid:$artifactname from database…")
+    log.debug(s"Getting info about jars of $groupid:$artifactname from database…")
 
     try {
-      val a = db.run(TableQuery[Data]
+      val rowsFuture = db.run(TableQuery[Data]
         .filter(row =>
           // Correct GA
           row.artifactname === artifactname && row.groupid === groupid
@@ -65,6 +34,7 @@ class PostgresUtils() {
             // only M.M and M.M.P since we don't care about pre-releases
             && (row.versionscheme === 1 || row.versionscheme === 2)
         )
+        // good first approximation
         .sortBy(_.timestamp)
         .map(gav => (gav.path, gav.version))
         .result)
@@ -78,7 +48,9 @@ class PostgresUtils() {
   }
 
   /** Get a specific amount of GAs
-   * @param limit maximal amount of libraries
+   *
+   * @param limit  maximal amount of libraries
+   * @param offset Offset (starting point) - for parallelization purposes
    * @return sequence of URLs
    */
   def getGAs(limit: Int): Seq[(String, String)] = {
@@ -87,7 +59,8 @@ class PostgresUtils() {
     log.info(s"Getting GAs from database…")
 
     try {
-      val gavs = TableQuery[AggregatedGA]
+      // use view
+      val cursorAggregatedGA = TableQuery[AggregatedGA]
 
       val ga = Await.result(db.run(gavs
         .sortBy(_.ga)
@@ -97,7 +70,7 @@ class PostgresUtils() {
 
       val gaCount = Await.result(db.run(gavs.length.result), Duration.Inf)
 
-      log.info(s"Got ${ga.length} out of ${gaCount} GAs from database")
+      log.info(s"Got ${ga.length}/${gaCount} GAs from database, offset ${offset}")
       ga.foreach(ga => log.debug(ga))
 
       ga.map(row => // split into groupid and artifactname
@@ -120,6 +93,48 @@ class PostgresUtils() {
 
     log.debug(s"Connecting to $user@$url")
     Database.forURL(url, user, password)
+  }
+
+  /**
+   * Private class defining (the types of) the main table
+   *
+   * @param tag
+   */
+  private class Data(tag: Tag)
+    extends Table[(Int, String, String, Option[String], String, String, Int)](tag, "data") {
+
+    def * =
+      (id, groupid, artifactname, classifier, version, path, versionscheme)
+
+    def path = column[String]("path")
+
+    def classifier = column[Option[String]]("classifier")
+
+    def id = column[Int]("id")
+
+    def groupid = column[String]("groupid")
+
+    def artifactname = column[String]("artifactname")
+
+    def version = column[String]("version")
+
+    def versionscheme = column[Int]("versionscheme")
+
+    def timestamp = column[Timestamp]("timestamp")
+  }
+
+  /**
+   * Private class defining the table of materialized view aggregated_ga
+   *
+   * @param tag
+   */
+  private class AggregatedGA(tag: Tag)
+    extends Table[(Int, String)](tag, "aggregated_ga") {
+    def * = (vs, ga)
+
+    def vs = column[Int]("vs")
+
+    def ga = column[String]("ga")
   }
 
 }

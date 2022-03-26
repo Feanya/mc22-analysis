@@ -18,8 +18,3 @@ case class JarFile(is: InputStream, url: URL)
  * @param is aar file stream
  */
 case class AarFile(is: InputStream, url: URL)
-
-
-class FileTypes {
-
-}

@@ -51,9 +51,12 @@ class PostgresApplication extends AnalysisApplication {
     val c = relevantGAsBySV.map(_.length).sorted
     val m = c.groupBy(identity).mapValues(_.size)
 
-    log.info(c.mkString(", "))
-    log.info(s"✔ Done! Looked with limit ${limit} at ${c.length} GAs with ${relevantGAsBySV.flatten.length} overall relevant versions: " +
-      s"\n(#versions, #libraries)\n${m.toList.sortBy(_._1).mkString("\n")}️")
+    log.info(counts.mkString(", "))
+    log.info(s"✔ Done: ${analyses.map(_.analysisName).mkString(", ")}!")
+    log.info(s"Looked with limit ${limit} at \n" +
+      s"${GAsWithNoJar} GAs without Jars, \n${GAsWithOneJar} GAs with one Jar\n" +
+      s"${counts.length} GAs with ${relevantGAsBySV.flatten.length} relevant versions: " +
+      s"\n(#libraries, #versions)\n${mapCountsGA.toList.sortBy(_._1).map(_.swap).mkString("\n")}️")
 
     profiler.stop().print()
   }

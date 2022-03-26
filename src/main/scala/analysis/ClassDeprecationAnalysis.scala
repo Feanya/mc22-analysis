@@ -71,6 +71,7 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       cl => {
         if (cl.isDeprecated) {
           deprecatedClasses += cl.fqn
+          log.info(deprecatedClasses.size.toString + " ClDepr: " + cl.fqn)
         }
         if (cl.fqn.split("/").takeRight(1)(0) == "package-info") {
           log.error("package-info found")
@@ -101,17 +102,17 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       allDepr = allDepr.union(deprecatedClasses)
 
       // Print stats
-      log.info(s"All classes:        ${allClasses.size}")
-      log.info(s"maintained classes: ${maintainedClasses.size}")
-      log.info(s"Added classes:      ➕${newClasses.size}")
-      log.info(s"Removed classes:    ➖${removedClasses.size}")
+      log.debug(s"All classes:        ${allClasses.size}")
+      log.debug(s"maintained classes: ${maintainedClasses.size}")
+      log.debug(s"Added classes:      ➕${newClasses.size}")
+      log.debug(s"Removed classes:    ➖${removedClasses.size}")
 
-      log.info(s"🗑 Deprecations️ overall: ${allDepr.size}")
-      log.info(s"🗑 Deprecations️ in version A: ${previousDepr.size}")
-      log.info(s"🗑 Deprecated in A and removed in B ✔️: ${deprAndRemovedClasses.size}")
-      log.info(s"🗑 Deprecated but not removed ❌: ${deprNotRemovedClasses.size}")
+      log.debug(s"🗑 Deprecations️ overall: ${allDepr.size}")
+      log.debug(s"🗑 Deprecations️ in version A: ${previousDepr.size}")
+      log.debug(s"🗑 Deprecated in A and removed in B ✔️: ${deprAndRemovedClasses.size}")
+      log.debug(s"🗑 Deprecated but not removed ❌: ${deprNotRemovedClasses.size}")
       log.debug(deprNotRemovedClasses.take(10).mkString("\n"))
-      log.info(s"❌ Removed but not deprecated ❌: ${removedNotDeprClasses.size}")
+      log.debug(s"❌ Removed but not deprecated ❌: ${removedNotDeprClasses.size}")
       log.debug(removedNotDeprClasses.take(10).mkString("\n"))
       result = Some(new PairResult(
         analysisName,

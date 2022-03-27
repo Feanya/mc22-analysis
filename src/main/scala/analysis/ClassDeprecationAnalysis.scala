@@ -11,9 +11,6 @@ import scala.util.matching.Regex
 
 /**
  * based on impl.group1.EvolutionAnalysis
- *
- * @param jarDir directory containing the different jar-file vs of a software to analyze
- *               Optional CLI arguments:
  */
 class ClassDeprecationAnalysis() extends NamedAnalysis {
   val SVU = new SemVerUtils()
@@ -64,9 +61,7 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
     var deprecatedClasses: Set[String] = Set()
     var result: Option[PairResult] = None
 
-    // todo
-    // nice idea to remove all the regex-matching, but class-info files do not get detected and therefore
-    // important deprecations get lost
+    // todo package-info.class considerations
     project.allClassFiles.foreach(
       cl => {
         if (cl.isDeprecated) {
@@ -76,6 +71,7 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
         if (cl.fqn.split("/").takeRight(1)(0) == "package-info") {
           log.error("package-info found")
         }
+        // todo: else case with pattern matching of annotations
       }
     )
 

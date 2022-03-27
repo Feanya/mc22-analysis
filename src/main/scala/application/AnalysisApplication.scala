@@ -7,7 +7,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import output.CsvFileOutput
 
 import java.net.URL
-import org.slf4j.profiler.Profiler
+
 
 /**
  * Base trait for applications that execute any kind of analysis on JAR files. Provides Lifecycle Hooks,
@@ -29,53 +29,42 @@ trait AnalysisApplication extends CsvFileOutput {
    *
    * @return sequence of analyses to call
    */
-  def buildAnalysis(): Seq[NamedAnalysis]
+  def buildAnalysis(): Iterable[NamedAnalysis]
 
   /**
    * Reset all analyses after e.g. processing one library
    *
    * @param analyses analyses to conduct
    */
-  def resetAnalyses(analyses: Seq[NamedAnalysis]): Unit = analyses.foreach(_.reset())
+  def resetAnalyses(analyses: Iterable[NamedAnalysis]): Unit = analyses.foreach(_.reset())
 
   /**
    * Method that executes all analyses on the input file(s) and produces the resulting List of JarFileMetrics.
-   * * @return Tuple containing 1) List of JarFileMetricsResults and 2) the ApplicationPerformanceStatistics
-   * (List[PairResult], ApplicationPerformanceStatistics) */
-  def calculateResults(analyses: Seq[NamedAnalysis], project: Project[URL], jarInfo: JarInfo): Seq[PairResult] =
-  analyses.map(analysis =>
-    analysis.produceAnalysisResultForJAR(project, jarInfo) match{
-      case Some(result) => result
-      case None => PairResult.analysisFailed(analysis.analysisName, jarInfo, jarInfo)
-    }
-  )
+   * * @return PairResults from analysis of one jar (and its predecessor) */
+  def calculateResults(analyses: Iterable[NamedAnalysis], project: Project[URL], jarInfo: JarInfo): Iterable[PairResult] =
+    analyses.map(analysis =>
+      analysis.produceAnalysisResultForJAR(project, jarInfo) match {
+        case Some(result) => result
+        case None => PairResult.analysisFailed(analysis.analysisName, jarInfo, jarInfo)
+      }
+    )
 
   /**
    * Prints results to the CLI and writes them to the database
    *
    * @param results Results to process
    */
-  def handleResults(results: List[PairResult]): Unit = {
+  def handleResults(results: Iterable[PairResult]): Unit = {
     // todo write result in database with foreign case
 
-
-
-    // todo: add output file
-    /*if (appConfiguration.outFileOption.isDefined) {
-      log.info(s"Writing results to output file ${appConfiguration.outFileOption.get}")
-      writeResultsToFile(appConfiguration.outFileOption.get, results) match {
-        case Failure(ex) =>
-          log.error("Error writing results", ex)
-        case Success(_) =>
-          log.info(s"Done writing results to file")
-      }*/
-
-    results.foreach { res =>
-      log.info(s"Results for analysis '${res.analysisName}' on ${res.jarFileOne.getName}/${res.jarFileTwo.getName}:")
-      res.results.foreach { v =>
-        log.info(s"\t- ${v.metricName} on ${v.jarNameOne}→${v.jarNameTwo}: ${v.value}")
+    results.foreach { result =>
+      log.info(s"Results for '${result.analysisName}' " +
+        s"on\n${result.jarOneInfo.jarname}/${result.jarTwoInfo.jarname} (${result.versionjump}):")
+      result.results.foreach { v =>
+        log.info(s"\t${v.name}: ${v.value}")
       }
     }
+  }
 
   /**
    * Write results of library analyses to the database

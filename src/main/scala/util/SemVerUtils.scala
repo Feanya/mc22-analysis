@@ -17,9 +17,9 @@ class SemVerUtils() {
    */
   def calculateVersionjump(v1: SemVer, v2: SemVer): Versionjump = {
     if (v1.major.major == 0) MajorZero()
-    if (v1.major.major == v2.major.major) {
+    else if (v1.major.major == v2.major.major) {
       if (v1.minor.minor == v2.minor.minor) {
-        if (v1.patch.patch == v2.patch.patch) Other()
+        if (v1.patch.patch == v2.patch.patch) Same()
         else if (v1.patch.patch < v2.patch.patch) Patch() else Other()
       }
       else if (v1.minor.minor < v2.minor.minor) Minor() else Other()

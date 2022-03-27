@@ -3,8 +3,9 @@ package application
 import analysis.NamedAnalysis
 import model.{JarInfo, LibraryResult, PairResult}
 import org.opalj.br.analyses.Project
+import org.sellmerfud.optparse._
+import org.slf4j.profiler.Profiler
 import org.slf4j.{Logger, LoggerFactory}
-import output.CsvFileOutput
 
 import java.net.URL
 
@@ -13,7 +14,7 @@ import java.net.URL
  * Base trait for applications that execute any kind of analysis on JAR files. Provides Lifecycle Hooks,
  * export functionality and logging access.
  */
-trait AnalysisApplication extends CsvFileOutput {
+trait AnalysisApplication {
 
   /**
    * The logger for this instance
@@ -23,6 +24,30 @@ trait AnalysisApplication extends CsvFileOutput {
 
   protected final val profiler: Profiler = new Profiler("Analysis-Application basic")
 
+  def parseArguments(args: Array[String]): CliConfig = {
+    val config = try {
+      new OptionParser[CliConfig] {
+        separator("Flags:")
+        flag("-d", "--dryrun", "Do not download jars and conduct analyses.") { _.copy(dryrun = true) }
+
+        separator("")
+        separator("Options:")
+
+        optl[Int]("-o <offset>", "", "Enter offset of libraries/GA.") { (v, c) => c.copy(offset = v getOrElse 0) }
+
+        optl[Int]("-l <limit>", "", "Enter limit of libraries/GA to pull.") { (v, c) => c.copy(limit = v getOrElse 1) }
+
+        // reqd[String]("-t", "--type=<type>", List("ascii", "binary"), "Set the data type. (ascii, binary)") { (v, c) => c.copy(fileType = v) }
+
+      }.parse(args, CliConfig())
+    }
+    catch {
+      case e: OptionParserException => println(e.getMessage); sys.exit(1)
+    }
+
+    log.info("config: " + config)
+    config
+  }
 
   /**
    * to be implemented by the application: collect all analyses which shall be conducted
@@ -81,5 +106,9 @@ trait AnalysisApplication extends CsvFileOutput {
   def main(arguments: Array[String]): Unit = {
     log.info("Up down strange charm ✨ Please implement main()-method in your application, thank you!")
   }
+
+  case class CliConfig(dryrun: Boolean = false,
+                       offset: Int = 0,
+                       limit: Int = 1)
 
 }

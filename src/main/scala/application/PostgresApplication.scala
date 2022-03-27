@@ -5,10 +5,9 @@ import model.JarInfo
 import util.{DownloadLib, PostgresUtils}
 
 class PostgresApplication extends AnalysisApplication {
-  override def main(arguments: Array[String]): Unit = {
-    val dryrun: Boolean = false
-    val limit: Int = 20
-    val offset: Int = 0
+  override def main(args: Array[String]): Unit = {
+    val cfg: CliConfig = parseArguments(args)
+
     val analyses: Seq[NamedAnalysis] = buildAnalysis()
     var GAsWithNoJar: Int = 0
     var GAsWithOneJar: Int = 0
@@ -17,7 +16,7 @@ class PostgresApplication extends AnalysisApplication {
     val postgresInteractor = new PostgresUtils()
     val jarInfosGAs: Seq[Seq[JarInfo]] = {
       // get library-coordinates from database
-      postgresInteractor.getGAs(limit, offset)
+      postgresInteractor.getGAs(cfg.limit, cfg.offset)
         // get URLS for all versions from database
         .map(ga => postgresInteractor.getJarInfoSemVerOnly(ga._1, ga._2))
         .map(_.sorted)
@@ -30,7 +29,7 @@ class PostgresApplication extends AnalysisApplication {
     )
     val relevantGAsBySV = jarInfosGAs.filter(ga => ga.length > 1)
 
-    if (!dryrun) {
+    if (!cfg.dryrun) {
       profiler.start("Analysis")
       val downloader = new DownloadLib()
       // urls_seq is two-dimensional: first dimension is of libraries…
@@ -56,7 +55,7 @@ class PostgresApplication extends AnalysisApplication {
 
     log.info(counts.mkString(", "))
     log.info(s"✔ Done: ${analyses.map(_.analysisName).mkString(", ")}!")
-    log.info(s"Looked with limit ${limit} at \n" +
+    log.info(s"Looked with limit ${cfg.limit} at \n" +
       s"${GAsWithNoJar} GAs without Jars, \n${GAsWithOneJar} GAs with one Jar\n" +
       s"${counts.length} GAs with ${relevantGAsBySV.flatten.length} relevant versions: " +
       s"\n(#libraries, #versions)\n${mapCountsGA.toList.sortBy(_._1).map(_.swap).mkString("\n")}️")

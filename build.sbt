@@ -17,8 +17,8 @@ lazy val root = (project in file("."))
     name := "mc22-analysis"
   )
 
-// Save data as csv
-libraryDependencies += "com.opencsv" % "opencsv" % "5.6"
+// cli argument parsing
+libraryDependencies += "org.sellmerfud" %% "optparse" % "2.2"
 
 // Logging
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.36"

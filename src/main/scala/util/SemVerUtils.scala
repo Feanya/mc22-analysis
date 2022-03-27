@@ -5,7 +5,7 @@ import model._
 import org.slf4j.{Logger, LoggerFactory}
 
 class SemVerUtils() {
-  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(0), SemVer.Patch(0), None, None)
+  val dummySemVer: SemVer = SemVer(SemVer.Major(9999), SemVer.Minor(9999), SemVer.Patch(9999), None, None)
   val log: Logger = LoggerFactory.getLogger("SemVerUtils")
 
   /**
@@ -16,6 +16,7 @@ class SemVerUtils() {
    * @return result
    */
   def calculateVersionjump(v1: SemVer, v2: SemVer): Versionjump = {
+    if (v1.major.major == 0) MajorZero()
     if (v1.major.major == v2.major.major) {
       if (v1.minor.minor == v2.minor.minor) {
         if (v1.patch.patch == v2.patch.patch) Other()

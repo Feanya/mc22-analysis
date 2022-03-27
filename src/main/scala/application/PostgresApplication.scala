@@ -7,27 +7,28 @@ import util.{DownloadLib, PostgresUtils}
 class PostgresApplication extends AnalysisApplication {
   override def main(arguments: Array[String]): Unit = {
     val dryrun: Boolean = false
-    val limit: Int = 25
+    val limit: Int = 20
+    val offset: Int = 0
     val analyses: Seq[NamedAnalysis] = buildAnalysis()
+    var GAsWithNoJar: Int = 0
+    var GAsWithOneJar: Int = 0
 
     profiler.start("Get sorted JarInfos")
     val postgresInteractor = new PostgresUtils()
     val jarInfosGAs: Seq[Seq[JarInfo]] = {
       // get library-coordinates from database
-      postgresInteractor.getGAs(limit)
+      postgresInteractor.getGAs(limit, offset)
         // get URLS for all versions from database
         .map(ga => postgresInteractor.getJarInfoSemVerOnly(ga._1, ga._2))
         .map(_.sorted)
     }
 
-    // sort
-    profiler.start("Sort and filter URLs")
-    val urlsVersionsSortedBySV = urlsVersionsSortedByTimestamp.map(_.sortWith(_._2 < _._2))
-    urlsVersionsSortedBySV.foreach(ga =>
-      if(ga.isEmpty) log.warn(s"Empty GA: ${ga}")
-      else if(ga.length == 1) {log.debug(s"GA with one version: ${ga}")}
-      )
-    val relevantGAsBySV = urlsVersionsSortedBySV.filter(ga => ga.length > 1)
+    profiler.start("Filter jars")
+    jarInfosGAs.foreach(ga =>
+      if (ga.isEmpty) GAsWithNoJar += 1
+      else if (ga.length == 1) GAsWithOneJar += 1
+    )
+    val relevantGAsBySV = jarInfosGAs.filter(ga => ga.length > 1)
 
     if (!dryrun) {
       profiler.start("Analysis")
@@ -43,13 +44,15 @@ class PostgresApplication extends AnalysisApplication {
               this.handleResults(calculateResults(analyses, project, jarinfo))
             case None => log.error(s"Could not load ${jarinfo.url}")
           })
+
+        this.handleLibraryResults(analyses.map(_.getLibraryResult))
         this.resetAnalyses(analyses)
       }
       )
     }
 
-    val c = relevantGAsBySV.map(_.length).sorted
-    val m = c.groupBy(identity).mapValues(_.size)
+    val counts: Seq[Int] = relevantGAsBySV.map(_.length).sorted
+    val mapCountsGA: Map[Int, Int] = counts.groupBy(identity).mapValues(_.size)
 
     log.info(counts.mkString(", "))
     log.info(s"✔ Done: ${analyses.map(_.analysisName).mkString(", ")}!")

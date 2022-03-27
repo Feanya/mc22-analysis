@@ -19,18 +19,14 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
   val SVU = new SemVerUtils()
   val dummySemVer: SemVer = SVU.dummySemVer
 
-  var previousJar: String = ""
-  var currentJar: String = ""
-  var previousVersion: SemVer = dummySemVer
-  var currentVersion: SemVer = dummySemVer
+  var previousJarInfo: JarInfo = JarInfo.initial
+  var currentJarInfo: JarInfo = JarInfo.initial
 
-  var previousClasses: scala.collection.Set[String] = Set()
-  var previousDepr: scala.collection.Set[String] = Set()
+  var previousClasses: Set[String] = Set()
+  var previousDepr: Set[String] = Set()
 
   // library info
-  var allDepr: scala.collection.Set[String] = Set()
-  var groupid: String = ""
-  var artifactname: String = ""
+  var allDepr: Set[String] = Set()
 
   var roundCounter: Integer = 0
 
@@ -44,6 +40,10 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
 
     previousClasses = Set()
     previousDepr = Set()
+
+    allDepr = Set()
+
+    roundCounter = 0
   }
 
 
@@ -79,8 +79,6 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       }
     )
 
-    currentVersion = SVU.parseSemVerString(version)
-
     if (roundCounter > 0) {
       log.debug(s"Calculating class-differences between: \n" +
         s"${previousJarInfo.jarname} and \n" +
@@ -97,9 +95,6 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       val deprAndRemovedClasses = removedClasses.intersect(previousDepr)
       val deprNotRemovedClasses = previousDepr.diff(removedClasses)
       val removedNotDeprClasses = removedClasses.diff(previousDepr)
-
-      // Library analysis
-      allDepr = allDepr.union(deprecatedClasses)
 
       // Print stats
       log.debug(s"All classes:        ${allClasses.size}")
@@ -126,11 +121,13 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
       log.info(s"Initial round on ${currentJarInfo.jarname}")
     }
 
+    // Library analysis
+    deprecatedClasses.foreach(cl => allDepr += cl)
+
     // prepare for next round
     previousJarInfo = currentJarInfo
     previousClasses = currentClasses
     previousDepr = deprecatedClasses
-    previousVersion = currentVersion
     roundCounter += 1
 
     // return result
@@ -146,8 +143,4 @@ class ClassDeprecationAnalysis() extends NamedAnalysis {
    * The name for this analysis implementation. Will be used to include and exclude analyses via CLI.
    */
   override def analysisName: String = "ClassDeprecation"
-
-  override def getLibraryResults(): Iterable[LibraryResult] = {
-    List(analysisName,  allDepr.size)
-  }
 }

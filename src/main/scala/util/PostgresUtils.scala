@@ -36,7 +36,6 @@ class PostgresUtils() {
         )
         // good first approximation
         .sortBy(_.timestamp)
-        .map(gav => (gav.path, gav.version))
         .result)
 
       val rows = Await.result(rowsFuture, Duration.Inf)
@@ -53,7 +52,7 @@ class PostgresUtils() {
    * @param offset Offset (starting point) - for parallelization purposes
    * @return sequence of URLs
    */
-  def getGAs(limit: Int): Seq[(String, String)] = {
+  def getGAs(limit: Int, offset: Int): Seq[(String, String)] = {
     val db = readConfigAndGetDatabaseConnection
 
     log.info(s"Getting GAs from database…")
@@ -62,13 +61,14 @@ class PostgresUtils() {
       // use view
       val cursorAggregatedGA = TableQuery[AggregatedGA]
 
-      val ga = Await.result(db.run(gavs
+      val ga = Await.result(db.run(cursorAggregatedGA
         .sortBy(_.ga)
+        .drop(offset)
         .take(limit)
         .map(_.ga)
         .result), Duration.Inf)
 
-      val gaCount = Await.result(db.run(gavs.length.result), Duration.Inf)
+      val gaCount = Await.result(db.run(cursorAggregatedGA.length.result), Duration.Inf)
 
       log.info(s"Got ${ga.length}/${gaCount} GAs from database, offset ${offset}")
       ga.foreach(ga => log.debug(ga))

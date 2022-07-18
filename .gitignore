@@ -1,0 +1,11 @@
+*application.conf
+target/*
+.bsp/*
+.idea/*
+project/project*
+project/target*
+*.tar
+*.jar
+*.lo*
+*.conf
+Rundata*

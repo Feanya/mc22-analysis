@@ -1,0 +1,7 @@
+services: 
+  analysis:
+    build: .
+    environment:
+      - POSTGRES_URL=${PG_URL}
+      - POSTGRES_USERNAME=${PG_USERNAME}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}

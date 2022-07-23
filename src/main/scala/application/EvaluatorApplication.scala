@@ -4,7 +4,6 @@ import analysis.NamedAnalysis
 import evaluation._
 
 
-
 class EvaluatorApplication extends PostgresApplication {
 
   final override def main(args: Array[String]): Unit = {
@@ -12,7 +11,7 @@ class EvaluatorApplication extends PostgresApplication {
 
     println("Me evaluation unit \uD83D\uDE80")
 
-    Views.createViews(postgresInteractor)
+    new Views(postgresInteractor).createViews()
 
     dataset_data()
     reproduceRaemaekers()
@@ -32,11 +31,11 @@ class EvaluatorApplication extends PostgresApplication {
     log.info("Generate data for descriptive statistics")
     val driver = new Datasetpaper(postgresInteractor)
     driver.run()
-      }
+  }
 
   def conduct_study(): Unit = {
-   log.info("Answer RQ1")
-   val driverA = new RQ1(postgresInteractor)
+    log.info("Answer RQ1")
+    val driverA = new RQ1(postgresInteractor)
     driverA.run()
 
 
@@ -52,6 +51,11 @@ class EvaluatorApplication extends PostgresApplication {
   }
 
 
-  override def shutdown(): Unit = { postgresInteractor.closeConnection() }
-  override def buildAnalysis(): Seq[NamedAnalysis] = {Seq()}
+  override def shutdown(): Unit = {
+    postgresInteractor.closeConnection()
+  }
+
+  override def buildAnalysis(): Seq[NamedAnalysis] = {
+    Seq()
+  }
 }

@@ -3,16 +3,16 @@ package evaluation
 import slick.jdbc.PostgresProfile.api._
 import util.PostgresUtils
 
-object Views {
+class Views(postgresInteractor: PostgresUtils) {
 
-  def createViews(postgresInteractor: PostgresUtils): Unit = {
-    createViewOnUpgradesWithYear(postgresInteractor)
-    createViewOnUpgradeIds(postgresInteractor)
-    createViewPairsWithTimestamp(postgresInteractor)
-    createViewPrimaries(postgresInteractor)
+  def createViews(): Unit = {
+    createViewOnUpgradesWithYear()
+    createViewOnUpgradeIds()
+    createViewPairsWithTimestamp()
+    createViewPrimaries()
   }
 
-  private def createViewOnUpgradesWithYear(postgresInteractor: PostgresUtils): Unit = {
+  private def createViewOnUpgradesWithYear(): Unit = {
 
     println("Creating view")
     val createUpgradeView = postgresInteractor.runAndWait(
@@ -30,7 +30,7 @@ object Views {
     println(testView)
   }
 
-  private def createViewOnUpgradeIds(postgresInteractor: PostgresUtils): Unit = {
+  private def createViewOnUpgradeIds(): Unit = {
     println("Materializing view on jars that are contained in an upgrade")
     val createView = postgresInteractor.runAndWait(
       sqlu"""
@@ -45,7 +45,7 @@ object Views {
     println("Done")
   }
 
-  private def createViewPairsWithTimestamp(postgresInteractor: PostgresUtils): Unit = {
+  private def createViewPairsWithTimestamp(): Unit = {
     println("Materializing view on jars that are contained in an upgrade")
     val createView = postgresInteractor.runAndWait(
       sqlu"""
@@ -60,7 +60,7 @@ object Views {
     println("Done")
   }
 
-  private def createViewPrimaries(postgresInteractor: PostgresUtils): Unit = {
+  private def createViewPrimaries(): Unit = {
     println("Creating view on primary jars")
     val createView = postgresInteractor.runAndWait(
       sqlu"""

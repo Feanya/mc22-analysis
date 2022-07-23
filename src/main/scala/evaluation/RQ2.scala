@@ -1,21 +1,21 @@
 package evaluation
 
-import slick.jdbc.PostgresProfile.api._
 import evaluation.utils._
+import slick.jdbc.PostgresProfile.api._
 import util.PostgresUtils
 
 class RQ2(postgresInteractor: PostgresUtils) {
 
   def run(): Unit = {
     println("Calculating versionschemes by year")
-    for(i <- 1 to 6)
+    for (i <- 1 to 6)
       two_a(i)
     println("Calculating all upgrades by year")
-     for(i <- 2 to 6)
+    for (i <- 2 to 6)
       two_b(i)
-    for(i <- 0 to 1)
+    for (i <- 0 to 1)
       two_ctot(i)
-    for(i <- 3 to 6)
+    for (i <- 3 to 6)
       two_ctot(i)
   }
 
@@ -32,7 +32,7 @@ class RQ2(postgresInteractor: PostgresUtils) {
      FROM(
              SELECT COUNT(*) AS count_scheme, EXTRACT(YEAR FROM timestamp) AS year
              FROM data
-             WHERE classifier IS NULL AND versionscheme = ${versionscheme}
+             WHERE classifier IS NULL AND versionscheme = $versionscheme
              GROUP BY year) AS a) AS scheme
 
         JOIN
@@ -71,7 +71,7 @@ class RQ2(postgresInteractor: PostgresUtils) {
           FROM pairresult_backup2
             JOIN upgrade_years ON pairresult_backup2.id=upgrade_years.id
           WHERE resultname = 'CDeprecatedInPrev'
-          AND versionjump = ${vJump}
+          AND versionjump = $vJump
           GROUP BY year
           ORDER BY year) AS a) AS scheme
 
@@ -96,34 +96,6 @@ class RQ2(postgresInteractor: PostgresUtils) {
     println(writeCsvFile(filename, Array("year", "count_scheme", "count_total", "percent"), rows))
   }
 
-
-  private def two_c(resultname:String, vJump: Int): Unit = {
-    val result = postgresInteractor.runAndWait(
-      sql"""SELECT rem.year, count_total, count_crem, (count_crem*100.0/count_total) AS percent FROM
-            (SELECT COUNT(*) AS count_crem, year
-             FROM pairresult_backup2 AS p
-                      JOIN upgrade_years ON p.id=upgrade_years.id
-             WHERE resultname = ${resultname} AND value > 0
-               AND versionjump = ${vJump}
-             GROUP BY year) AS rem
-            JOIN
-            (SELECT COUNT(*) AS count_total, year
-             FROM pairresult_backup2 AS p
-                      JOIN upgrade_years ON p.id=upgrade_years.id
-             WHERE resultname = ${resultname}
-               AND versionjump = ${vJump}
-             GROUP BY year) AS total
-            ON rem.year = total.year
-            ORDER BY year""".as[(Int, Int, Int, Float)]) // attention, this is unsafe SQL!
-
-    val prefix: String = s"${resultname}_upgrades_by_year"
-    val filename = s"results/study/2c-$prefix-$vJump.csv"
-
-    val rows = fourTuplesToRows(result)
-    println(writeCsvFile(filename, Array("year", "count_total", "count_rem", "percent"), rows))
-  }
-
-
   private def two_ctot(versionjump: Int): Unit = {
 
     val result = postgresInteractor.runAndWait(
@@ -137,7 +109,7 @@ class RQ2(postgresInteractor: PostgresUtils) {
              (resultname =
              'MWronglyRemovedPub' AND
              value > 0))
-      AND versionjump = ${versionjump}
+      AND versionjump = $versionjump
       GROUP BY year) AS foo
       WHERE year BETWEEN 2006 and 2021
          """.as[(String, String)]) // attention, this is unsafe SQL!
@@ -148,6 +120,32 @@ class RQ2(postgresInteractor: PostgresUtils) {
     val rows = twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", "count_total_break"), rows))
 
+  }
+
+  private def two_c(resultname: String, vJump: Int): Unit = {
+    val result = postgresInteractor.runAndWait(
+      sql"""SELECT rem.year, count_total, count_crem, (count_crem*100.0/count_total) AS percent FROM
+            (SELECT COUNT(*) AS count_crem, year
+             FROM pairresult_backup2 AS p
+                      JOIN upgrade_years ON p.id=upgrade_years.id
+             WHERE resultname = $resultname AND value > 0
+               AND versionjump = $vJump
+             GROUP BY year) AS rem
+            JOIN
+            (SELECT COUNT(*) AS count_total, year
+             FROM pairresult_backup2 AS p
+                      JOIN upgrade_years ON p.id=upgrade_years.id
+             WHERE resultname = $resultname
+               AND versionjump = $vJump
+             GROUP BY year) AS total
+            ON rem.year = total.year
+            ORDER BY year""".as[(Int, Int, Int, Float)]) // attention, this is unsafe SQL!
+
+    val prefix: String = s"${resultname}_upgrades_by_year"
+    val filename = s"results/study/2c-$prefix-$vJump.csv"
+
+    val rows = fourTuplesToRows(result)
+    println(writeCsvFile(filename, Array("year", "count_total", "count_rem", "percent"), rows))
   }
 
 }

@@ -3,8 +3,8 @@ package evaluation
 import com.opencsv.{CSVWriter, ICSVWriter}
 
 import java.io.FileWriter
-import scala.util.{Failure, Try}
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Try}
 
 object utils {
 
@@ -18,13 +18,13 @@ object utils {
       ICSVWriter.DEFAULT_LINE_END)
 
     Try(csvwrite).flatMap((csvWriter: CSVWriter) =>
-      Try{
+      Try {
         csvWriter.writeNext(header)
         csvWriter.writeAll(rows.asJava)
         csvWriter.close()
       } match {
-        case f @ Failure(_) =>
-          Try(csvWriter.close()).recoverWith{
+        case f@Failure(_) =>
+          Try(csvWriter.close()).recoverWith {
             case _ => f
           }
         case success =>
@@ -32,7 +32,6 @@ object utils {
       }
     )
   }
-
 
 
   def twoTuplesToRows(tuple: Vector[(Any, Any)]): List[Array[String]] = {

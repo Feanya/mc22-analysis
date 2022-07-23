@@ -13,22 +13,18 @@ class RQ1(postgresInteractor: PostgresUtils) {
     one_b()
     one_c("CWronglyRemoved", 0)
     one_c("CWronglyRemoved", 1)
-    for (i <- 3 to 4)
-      one_c("CWronglyRemoved", i)
+    for (i <- 3 to 4) one_c("CWronglyRemoved", i)
     one_c("MWronglyRemovedPub", 0)
     one_c("MWronglyRemovedPub", 1)
-    for (i <- 3 to 4)
-      one_c("MWronglyRemovedPub", i)
+    for (i <- 3 to 4) one_c("MWronglyRemovedPub", i)
     one_ctot()
   }
 
   /**
-   *
-   */
+   * */
   def one_a(): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
            SELECT a.versionscheme, count_studytime, count_alltime,
        count_studytime*100.0/SUM(count_studytime) over() AS freq_studytime,
        count_alltime*100.0/SUM(count_alltime) over() AS freq_alltime
@@ -57,8 +53,7 @@ class RQ1(postgresInteractor: PostgresUtils) {
 
   def one_az(): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
         SELECT versionscheme, count_studytime
         FROM(
         (SELECT COUNT(*) AS count_studytime, versionscheme FROM data
@@ -78,8 +73,7 @@ class RQ1(postgresInteractor: PostgresUtils) {
 
   def one_anz(): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
         SELECT versionscheme, count_studytime
         FROM(
         (SELECT COUNT(*) AS count_studytime, versionscheme FROM data
@@ -99,8 +93,7 @@ class RQ1(postgresInteractor: PostgresUtils) {
 
   def one_b(): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
     SELECT a.versionjump, count_total_upgrades, count_total_upgrades*100.0/SUM(count_total_upgrades) over() AS percent FROM
     (SELECT COUNT(*) AS count_total_upgrades, versionjump
      FROM pairresult_backup_with_timestamp
@@ -120,8 +113,7 @@ class RQ1(postgresInteractor: PostgresUtils) {
 
   def one_c(resultname: String, vJump: Int): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
         SELECT upgrades_total,
                crem_total,
               (crem_total*100/upgrades_total) AS percent FROM (
@@ -131,16 +123,16 @@ class RQ1(postgresInteractor: PostgresUtils) {
     (SELECT COUNT(*) AS count_crem, year
      FROM pairresult_backup2 AS p
               JOIN upgrade_years ON p.id=upgrade_years.id
-     WHERE resultname = ${resultname} AND value > 0
-       AND versionjump = ${vJump}
+     WHERE resultname = $resultname AND value > 0
+       AND versionjump = $vJump
      AND year BETWEEN 2006 AND 2021
      GROUP BY year) AS rem
         JOIN
     (SELECT COUNT(*) AS count_total, year
      FROM pairresult_backup2 AS p
               JOIN upgrade_years ON p.id=upgrade_years.id
-     WHERE resultname = ${resultname}
-       AND versionjump = ${vJump}
+     WHERE resultname = $resultname
+       AND versionjump = $vJump
      AND year BETWEEN 2006 AND 2021
      GROUP BY year) AS total
     ON rem.year = total.year)AS foo
@@ -157,8 +149,7 @@ class RQ1(postgresInteractor: PostgresUtils) {
 
   def one_ctot(): Unit = {
 
-    val result = postgresInteractor.runAndWait(
-      sql"""
+    val result = postgresInteractor.runAndWait(sql"""
      select versionjump, COUNT(Distinct "jarTwoID") AS count_breaking_upgrades
       FROM pairresult_backup_with_timestamp
       WHERE ((resultname =

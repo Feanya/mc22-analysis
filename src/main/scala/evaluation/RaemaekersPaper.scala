@@ -1,10 +1,7 @@
 package evaluation
 
-import model.{AggregatedGA, PairResults}
-import slick.jdbc.ActionBasedSQLInterpolation
-import slick.jdbc.PostgresProfile.api._
-import slick.lifted.TableQuery
 import evaluation.utils._
+import slick.jdbc.PostgresProfile.api._
 import util.PostgresUtils
 
 class RaemaekersPaper(postgresInteractor: PostgresUtils) {
@@ -13,7 +10,7 @@ class RaemaekersPaper(postgresInteractor: PostgresUtils) {
     reproduceRPtable1()
     myrpTable1Alltime()
     rptable2()
-    for(i <- 0 to 6)
+    for (i <- 0 to 6)
       tab_3_upgrades_by_year(i)
   }
 
@@ -129,6 +126,23 @@ ORDER BY sum_originaltime012
 
   }
 
+  def tab_3_upgrades_by_year(vJump: Int): Unit = {
+    val prefix: String = "rpaper/3-upgrades_by_year"
+
+    val innerJoin = postgresInteractor.runAndWait(
+      sql"""SELECT COUNT(pairresult_backup2.id) AS count, year
+            FROM pairresult_backup2
+                JOIN upgrade_years ON pairresult_backup2.id=upgrade_years.id
+            WHERE resultname = 'CDeprecatedInPrev'
+            AND versionjump = $vJump
+            GROUP BY year
+            ORDER BY year""".as[(Int, Int)]) // attention, this is unsafe SQL!
+
+    val filename = s"results/$prefix-$vJump.csv"
+
+    val rows = twoTuplesToRows(innerJoin)
+    println(writeCsvFile(filename, Array("count", "year"), rows))
+  }
 
   def rptable2_012(): Unit = {
     val result = postgresInteractor.runAndWait(
@@ -197,25 +211,6 @@ ORDER BY sum_originaltime012 DESC
 
   }
 
-
-  def tab_3_upgrades_by_year(vJump: Int): Unit = {
-    val prefix: String = "rpaper/3-upgrades_by_year"
-
-    val innerJoin = postgresInteractor.runAndWait(
-      sql"""SELECT COUNT(pairresult_backup2.id) AS count, year
-            FROM pairresult_backup2
-                JOIN upgrade_years ON pairresult_backup2.id=upgrade_years.id
-            WHERE resultname = 'CDeprecatedInPrev'
-            AND versionjump = ${vJump}
-            GROUP BY year
-            ORDER BY year""".as[(Int, Int)]) // attention, this is unsafe SQL!
-
-    val filename = s"results/$prefix-$vJump.csv"
-
-    val rows = twoTuplesToRows(innerJoin)
-    println(writeCsvFile(filename, Array("count", "year"), rows))
-  }
-
   def fig_5_upgrades_percentages(vJump: Int): Unit = {
     val prefix: String = "rpaper/5-upgrades_by_year"
 
@@ -225,10 +220,10 @@ ORDER BY sum_originaltime012 DESC
             FROM pairresult_backup2
                 JOIN upgrade_years ON pairresult_backup2.id=upgrade_years.id
             WHERE resultname = 'CDeprecatedInPrev'
-            AND versionjump = ${vJump}
+            AND versionjump = $vJump
             GROUP BY year
             ORDER BY year""".as[(Int, Int)]) // attention, this is unsafe SQL!
-  // Tooodo!
+    // Tooodo!
 
     val filename = s"results/$prefix-$vJump.csv"
 

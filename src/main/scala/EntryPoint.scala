@@ -1,4 +1,6 @@
-import application.PostgresApplication
+import application.{EvaluatorApplication, PostgresApplication}
+
+import scala.sys.exit
 
 object EntryPoint {
 
@@ -6,13 +8,23 @@ object EntryPoint {
 
     if (args.contains("--import")) {
       println("Clean database and import from rclones lsl")
-    } else {
+    }
+    if (args.contains("--run-analysis")) {
       println("Run: PostgresAnalysis! \uD83D\uDE80")
       println(s"🔧 Config: ${args.mkString(",")}")
+      exit(42)
       val app = new PostgresApplication()
       app.main(args)
     }
-
+    if (args.contains("--evaluate")) {
+      println("Evaluate database…")
+      exit(43)
+      val app = new EvaluatorApplication()
+      app.main(args)
+    }
+    else {
+      println("Please select at least one task to run! Tasks are: --import, --run-analysis, --evaluate.")
+    }
   }
 
 }

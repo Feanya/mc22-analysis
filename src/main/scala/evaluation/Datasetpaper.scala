@@ -1,9 +1,15 @@
 package evaluation
 
-import evaluation.Filter.{postgresInteractor, threeTuplesToRows, writeCsvFile}
 import slick.jdbc.PostgresProfile.api._
+import evaluation.utils._
+import util.PostgresUtils
 
-class Datasetpaper {
+class Datasetpaper(postgresInteractor: PostgresUtils) {
+
+  def run(): Unit = {
+      jars_by_year_in_j_and_a()
+  }
+
 //  SELECT COUNT(*) AS count_all FROM data;
 //  SELECT COUNT(*) AS count_primary FROM primary_data;
 //  SELECT SUM(count) AS count_primary_with_other_table FROM aggregated_ga; -- gleiches Ergebnis, nur anders

@@ -1,14 +1,29 @@
 package evaluation
 
-import evaluation.Filter._
 import slick.jdbc.PostgresProfile.api._
+import evaluation.utils._
+import util.PostgresUtils
 
-class RQ4 {
+class RQ4(postgresInteractor: PostgresUtils) {
+
+  def run(): Unit = {
+    four_a()
+    four_ac("CDeprecatedInPrev")
+    four_ac("MDeprecatedInPrevPub")
+    four_atc()
+    four_atw()
+    four_atwp()
+    for(i <- 0 to 1)
+      four_b(i)
+    for(i <- 3 to 6)
+      four_b(i)
+     four_b_totdeprm()
+  }
 
   /**
    *
    */
-  def four_a(): Unit = {
+  private def four_a(): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -33,7 +48,7 @@ class RQ4 {
   }
 
 
-  def four_ac(resultname:String): Unit = {
+  private def four_ac(resultname:String): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -49,13 +64,13 @@ class RQ4 {
     val prefix: String = resultname
     val filename = s"results/study/4a-$prefix-alldepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("versionjump", "count_jars_with_deprecationtag"), rows))
 
   }
 
 
-  def four_ap(): Unit = {
+  private def four_ap(): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -71,13 +86,13 @@ class RQ4 {
     val prefix: String = s"d"
     val filename = s"results/study/4a-$prefix-alldepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("versionjump", "count_jars_with_deprecationtag"), rows))
 
   }
 
 
-  def four_atc(): Unit = {
+  private def four_atc(): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -96,13 +111,13 @@ class RQ4 {
     val prefix: String = "correct"
     val filename = s"results/study/4a-$prefix-alldepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("versionjump", "count_corr_rem"), rows))
 
   }
 
 
-  def four_atw(): Unit = {
+  private def four_atw(): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -121,13 +136,13 @@ class RQ4 {
     val prefix: String = "wrong"
     val filename = s"results/study/4a-$prefix-alldepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("versionjump", "count_wrong_rem"), rows))
 
   }
 
 
-  def four_atwp(): Unit = {
+  private def four_atwp(): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
@@ -162,7 +177,7 @@ SELECT versionjump, COUNT(*) FROM
     val prefix: String = "no-fail-but-a-pos"
     val filename = s"results/study/4a-$prefix-alldepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("versionjump", "count_wrong_rem"), rows))
 
   }
@@ -218,7 +233,7 @@ SELECT versionjump, COUNT(*) FROM
     val prefix: String = s"d"
     val filename = s"results/study/4b-$prefix-totdepr.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", "count_jars_with_deprecationtag"), rows))
 
   }
@@ -244,7 +259,7 @@ SELECT versionjump, COUNT(*) FROM
     val prefix: String = s"d"
     val filename = s"results/study/4b-$prefix-wrongrem.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", "count_upgrades_with_wrong"), rows))
   }
 
@@ -269,7 +284,7 @@ SELECT versionjump, COUNT(*) FROM
     val prefix: String = s"d"
     val filename = s"results/study/4b-$prefix-cor-rem.csv"
 
-    val rows = twoTuplesToRows(result)
+    val rows = utils.twoTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", "count_upgrades_with_wrong"), rows))
   }
 
@@ -335,7 +350,7 @@ JOIN
     val prefix: String = s"all"
     val filename = s"results/study/4b-$prefix-depr.csv"
 
-    val rows = fourTuplesToRows(result)
+    val rows = utils.fourTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", " wrong", "total_depr","count_with_correct_removals"), rows))
 
   }
@@ -396,7 +411,7 @@ JOIN
     val prefix: String = s"all"
     val filename = s"results/study/4b-$prefix-depr.csv"
 
-    val rows = fourTuplesToRows(result)
+    val rows = utils.fourTuplesToRows(result)
     println(writeCsvFile(filename, Array("year", " wrong", "total_depr","count_with_correct_removals"), rows))
 
   }

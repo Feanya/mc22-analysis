@@ -1,16 +1,25 @@
 package evaluation
 
-import evaluation.Filter.{fiveTuplesToRows, fourTuplesToRows, postgresInteractor, threeTuplesToRows, twoTuplesToRows, writeCsvFile}
 import slick.jdbc.PostgresProfile.api._
+import evaluation.utils._
+import util.PostgresUtils
 
-class RQ2 {
+class RQ2(postgresInteractor: PostgresUtils) {
 
-  /**
-   *
-   */
+  def run(): Unit = {
+    println("Calculating versionschemes by year")
+    for(i <- 1 to 6)
+      two_a(i)
+    println("Calculating all upgrades by year")
+     for(i <- 2 to 6)
+      two_b(i)
+    for(i <- 0 to 1)
+      two_ctot(i)
+    for(i <- 3 to 6)
+      two_ctot(i)
+  }
 
-
-  def two_a(versionscheme: Int): Unit = {
+  private def two_a(versionscheme: Int): Unit = {
 
     val innerJoin = postgresInteractor.runAndWait(
       sql"""
@@ -47,7 +56,7 @@ class RQ2 {
   }
 
 
-  def two_b(vJump: Int): Unit = {
+  private def two_b(vJump: Int): Unit = {
 
     val innerJoin = postgresInteractor.runAndWait(
       sql"""
@@ -88,8 +97,7 @@ class RQ2 {
   }
 
 
-
-  def two_c(resultname:String, vJump: Int): Unit = {
+  private def two_c(resultname:String, vJump: Int): Unit = {
     val result = postgresInteractor.runAndWait(
       sql"""SELECT rem.year, count_total, count_crem, (count_crem*100.0/count_total) AS percent FROM
             (SELECT COUNT(*) AS count_crem, year
@@ -116,8 +124,7 @@ class RQ2 {
   }
 
 
-
-  def two_ctot(versionjump: Int): Unit = {
+  private def two_ctot(versionjump: Int): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""

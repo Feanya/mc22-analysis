@@ -1,12 +1,21 @@
 package evaluation
 
-import evaluation.Filter.{fiveTuplesToRows, postgresInteractor, sevenTuplesToRows, threeTuplesToRows, twoTuplesToRows, writeCsvFile}
 import model.{AggregatedGA, PairResults}
 import slick.jdbc.ActionBasedSQLInterpolation
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
+import evaluation.utils._
+import util.PostgresUtils
 
-class RaemaekersPaper {
+class RaemaekersPaper(postgresInteractor: PostgresUtils) {
+
+  def reproduce(): Unit = {
+    reproduceRPtable1()
+    myrpTable1Alltime()
+    rptable2()
+    for(i <- 0 to 6)
+      tab_3_upgrades_by_year(i)
+  }
 
   /**
    * Version string patterns and frequencies of occurrence in upgrade-jars .

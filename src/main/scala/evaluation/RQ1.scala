@@ -1,9 +1,26 @@
 package evaluation
 
-import evaluation.Filter.{fiveTuplesToRows, fourTuplesToRows, postgresInteractor, threeTuplesToRows, twoTuplesToRows, writeCsvFile}
+import evaluation.utils._
 import slick.jdbc.PostgresProfile.api._
+import util.PostgresUtils
 
-class RQ1 {
+class RQ1(postgresInteractor: PostgresUtils) {
+
+  def run(): Unit = {
+    one_a()
+    one_az()
+    one_anz()
+    one_b()
+    one_c("CWronglyRemoved", 0)
+    one_c("CWronglyRemoved", 1)
+    for (i <- 3 to 4)
+      one_c("CWronglyRemoved", i)
+    one_c("MWronglyRemovedPub", 0)
+    one_c("MWronglyRemovedPub", 1)
+    for (i <- 3 to 4)
+      one_c("MWronglyRemovedPub", i)
+    one_ctot()
+  }
 
   /**
    *
@@ -80,7 +97,6 @@ class RQ1 {
   }
 
 
-
   def one_b(): Unit = {
 
     val result = postgresInteractor.runAndWait(
@@ -102,7 +118,7 @@ class RQ1 {
   }
 
 
-  def one_c(resultname:String, vJump: Int): Unit = {
+  def one_c(resultname: String, vJump: Int): Unit = {
 
     val result = postgresInteractor.runAndWait(
       sql"""
